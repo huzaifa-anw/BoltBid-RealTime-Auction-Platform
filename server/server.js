@@ -1,16 +1,14 @@
 import express from 'express';
 import 'dotenv/config';
-import { drizzle } from 'drizzle-orm/node-postgres';
 import authRouter from './routes/auth.routes.js';
 import auctionRouter from './routes/auction.routes.js';
 import userRouter from './routes/user.routes.js';
 import logger from './middlewares/logger.middleware.js'
+import errorHandler from './middlewares/errorHandler.middleware.js'
 
 const app = express();
 
 const PORT = process.env.PORT || 5000;
-
-const db = drizzle(process.env.DATABASE_URL);
 
 app.use(express.json());
 
@@ -21,6 +19,8 @@ app.use(logger);
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/auctions', auctionRouter);
 app.use('/api/v1/users', userRouter);
+
+app.use(errorHandler);
 
 app.listen(PORT, () => {
     console.log(`BoltBid server is running on port: ${PORT}`);
