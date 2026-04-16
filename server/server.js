@@ -1,5 +1,6 @@
 import express from 'express';
 import 'dotenv/config';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import authRouter from './routes/auth.routes.js';
 import auctionRouter from './routes/auction.routes.js';
 import userRouter from './routes/user.routes.js';
@@ -8,6 +9,8 @@ import logger from './middlewares/logger.middleware.js'
 const app = express();
 
 const PORT = process.env.PORT || 5000;
+
+const db = drizzle(process.env.DATABASE_URL);
 
 app.use(express.json());
 
