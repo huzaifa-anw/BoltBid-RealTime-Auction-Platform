@@ -4,6 +4,8 @@ import { db } from '../db/db.js'
 import { users } from "../db/schema.js";
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
+import jwt from 'jsonwebtoken'
+import { promisify } from 'util'
 
 export const registerUser = asyncHandler(async (req, res) => {
     // register user
@@ -43,7 +45,7 @@ export const registerUser = asyncHandler(async (req, res) => {
 
     return res.status(200).json({
         sucess: true,
-        status: 200,
+        statusCode: 201,
         msg: 'User created successfully',
         user: safeUser
     });
@@ -51,4 +53,34 @@ export const registerUser = asyncHandler(async (req, res) => {
 
 export const loginUser = asyncHandler(async (req, res) => {
     // login user
+    const {email, password} = req.body;
+    if (!email || !password) throw new ApiError('All fields are required', 400, 'VALIDATION_ERROR');
+    
+    // check if user exists
+    const emailMatch = await db.select().from(users).where(eq(users.email, email));
+    const existingUser = emailMatch[0];
+    if(!existingUser) throw new ApiError('User does not exist', 404, 'USER_DOESNT_EXIST');
+
+    // check for password match       
+    const checkPassword = await bcrypt.compare(password, existingUser.password_hash); 
+    if (!checkPassword) throw new ApiError('Incorrect password', 401, 'INCORRECT_PASSWORD');
+
+    // create jwt payload
+    const payload = {
+        id: existingUser.id,
+        name: existingUser.name,
+        email: existingUser.email
+    }
+    
+    // create jwt
+    const signToken = promisify(jwt.sign);
+    const accessToken = await signToken(payload, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '24h' });
+
+    // issue jwt and send res
+    return res.status(200).json({
+        sucess: true,
+        statusCode: 200,
+        msg: 'Login Successful',
+        accessToken
+    })
 })
