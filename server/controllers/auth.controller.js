@@ -35,8 +35,6 @@ export const registerUser = asyncHandler(async (req, res) => {
 
     const response = await db.insert(users).values(user).returning();
 
-    console.dir(response);
-
     const safeUser = {
         id: response[0].id,
         name: response[0].name,
@@ -74,7 +72,7 @@ export const loginUser = asyncHandler(async (req, res) => {
     
     // create jwt
     const signToken = promisify(jwt.sign);
-    const accessToken = await signToken(payload, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '24h' });
+    const accessToken = await signToken(payload, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '24h' }); // change to 15mins after adding refresh tokens
 
     // issue jwt and send res
     return res.status(200).json({
