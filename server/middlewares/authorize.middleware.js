@@ -10,7 +10,7 @@ const authorize = asyncHandler (async (req, res, next) => {
 
     if(!authHeaders) throw new ApiError('Auth Headers not found', 400);
 
-    if(!authHeaders.startsWith('Bearer')) throw new ApiError('Wrong authorization token format');
+    if(!authHeaders.startsWith('Bearer ')) throw new ApiError('Wrong authorization token format', 403);
     
     const token = authHeaders.split(' ')[1];
     if(!token) throw new ApiError('Access Token not found ', 403);
@@ -19,7 +19,6 @@ const authorize = asyncHandler (async (req, res, next) => {
     const verifyToken = promisify(jwt.verify);
 
     const payload = await verifyToken(token, process.env.ACCESS_TOKEN_SECRET);
-    
     req.user = payload;
     console.dir(req.user);
 
