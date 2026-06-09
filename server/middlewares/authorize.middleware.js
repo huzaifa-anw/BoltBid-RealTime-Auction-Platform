@@ -17,7 +17,6 @@ const authorize = asyncHandler (async (req, res, next) => {
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
         if(err) throw new ApiError('Acess Token could not be verified', 401, 'INVALID_TOKEN');
         req.user = decoded;
-        console.dir(req.user);
         next();
     })
 })

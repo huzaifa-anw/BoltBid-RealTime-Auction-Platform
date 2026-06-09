@@ -1,14 +1,12 @@
 import ApiError from "../utils/ApiError.js"
+import ApiResponse from "../utils/ApiResponse..js";
 
 const userProfile = (req, res) => {
     const {id, name, email} = req.user;
 
-    res.status(200).json({
-        success: true,
-        statusCode: 200,
-        id,
-        name, email
-    })
+    const response = new ApiResponse(true, 200, 'user profile fetched', {id, name, email});
+
+    res.status(response.statusCode).json(response);
 }
 
 export default userProfile;
