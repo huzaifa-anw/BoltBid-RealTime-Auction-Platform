@@ -1,6 +1,6 @@
 import asyncHandler from "express-async-handler";
 import ApiError from "../utils/ApiError.js";
-import ApiResponse from "../utils/ApiResponse..js";
+import ApiResponse from "../utils/ApiResponse.js";
 import { db } from "../db/db.js";
 import { users } from "../db/schema.js";
 import bcrypt from "bcryptjs";

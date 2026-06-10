@@ -27,6 +27,8 @@ export const auctions = pgTable("auctions", {
     .references(() => users.id, { onDelete: "set null" }),
 
   ends_at: timestamp("ends_at").notNull(),
+  
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
 });
 

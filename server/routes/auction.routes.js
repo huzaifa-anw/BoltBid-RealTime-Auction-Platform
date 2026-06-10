@@ -1,11 +1,12 @@
 import { Router } from "express";
+import { createAuction } from "../controllers/auction.controller.js";
 
 const auctionRouter = Router();
 
 // auctions
 auctionRouter.get('/', (req, res) => res.json({msg: 'get all auctions'}));
 
-auctionRouter.post('/', (req, res) => res.json({msg: 'create an auction'}));
+auctionRouter.post('/', createAuction);
 auctionRouter.get('/:id', (req, res) => res.json({msg: 'get the specified auction'}));
 auctionRouter.patch('/:id', (req, res) => res.json({msg: 'update the specified auction'}));
 auctionRouter.delete('/:id', (req, res) => res.json({msg: 'delete the specified auction'}));
