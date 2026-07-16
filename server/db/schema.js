@@ -1,13 +1,14 @@
-import { pgTable, uuid, varchar, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, pgEnum, uuid, varchar, integer, timestamp } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
+export const auctionStatusEnum = pgEnum("auction_status", ["ACTIVE", "ENDED"]);
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   password_hash: varchar("password_hash", { length: 255 }).notNull(),
-  created_at: timestamp("created_at").defaultNow().notNull(),
+  created_at: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
 });
 
 
@@ -26,10 +27,14 @@ export const auctions = pgTable("auctions", {
   highest_bidder_id: uuid("highest_bidder_id")
     .references(() => users.id, { onDelete: "set null" }),
 
-  ends_at: timestamp("ends_at").notNull(),
+    image_url: varchar("image_url", { length: 512 }),
+
+    status: auctionStatusEnum("status").default("ACTIVE").notNull(),
+
+  ends_at: timestamp("ends_at", { withTimezone: true, mode: "date" }).notNull(),
   
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+  created_at: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
 });
 
 
@@ -45,7 +50,7 @@ export const bids = pgTable("bids", {
     .references(() => users.id, { onDelete: "cascade" }),
 
   amount: integer("amount").notNull(),
-  created_at: timestamp("created_at").defaultNow().notNull(),
+  created_at: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
 });
 
 

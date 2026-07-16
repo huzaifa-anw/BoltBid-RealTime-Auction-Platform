@@ -5,54 +5,55 @@ import { auctions } from "../db/schema.js";
 import ApiResponse from "../utils/ApiResponse.js";
 
 export const createAuction = asyncHandler(async (req, res) => {
-        const {title, hostId, description, startingPrice, endsAt} = req.body;
+    // endsAtDurationInHrs is how many hours from now the auction should stay open.
+    // Client must send whole hours only — any conversion from days happens client-side.
+    // the server does not accept anything other than hours
+    const { title, description, startingPrice, imageURL, endsAtDurationInHrs } = req.body;
 
-        if (!title || !hostId || !description || !startingPrice || !endsAt) throw new ApiError('all fields are required ', 400, 'VALIDATION_ERROR');
+    const hostId = req.user.id;
 
-        if (startingPrice <= 0) throw new ApiError('starting price should be a positive integer', 400, 'VALIDATION_ERROR');
+    if (!hostId) throw new ApiError('host id wasnt found in access token paylaod, get token on api/v1/auth/login', 400, 'VALIDATION_ERROR');
 
-        if (title.length <= 0 || title.length > 254 ) throw new ApiError('title should be between 1-254 characters', 400, 'VALIDATION_ERROR');
+    if (!title || !description || !startingPrice || !endsAtDurationInHrs) {
+        throw new ApiError('all fields are required', 400, 'VALIDATION_ERROR');
+    }
 
-        if (description.length <= 0 || description.length > 254 ) throw new ApiError('description should be between 1-254 characters', 400, 'VALIDATION_ERROR');
-         
-        const endsAtNum = Number(endsAt);
-        if (!Number.isFinite(endsAtNum)) throw new ApiError("endsAt must be a number", 400);
-        // making sure time sent is in ms
-        if (String(endsAtNum).length !== 13) throw new ApiError("endsAt must be epoch milliseconds", 400);
+    if (startingPrice <= 0) throw new ApiError('starting price should be a positive integer', 400, 'VALIDATION_ERROR');
 
-        // current time in epoch
-        const nowDateEpoch = Date.now();
+    if (title.length <= 0 || title.length > 254) throw new ApiError('title should be between 1-254 characters', 400, 'VALIDATION_ERROR');
 
-        // find the higher and upper bound for auction ending time in epoch
-        const minEndsAtEpoch = nowDateEpoch + 1000 * 60 * 60; // 1 hour from now
-        const maxEndsAtEpoch = nowDateEpoch + 1000 * 60 * 60 * 24 * 10; // 10 days from now
+    if (description.length <= 0 || description.length > 254) throw new ApiError('description should be between 1-254 characters', 400, 'VALIDATION_ERROR');
 
-        if(endsAtNum < minEndsAtEpoch) throw new ApiError('auction cannot end before 1hr from the current time', 400, 'VALIDATION_ERROR');
+    const durationHrs = Number(endsAtDurationInHrs);
+    if (!Number.isFinite(durationHrs)) throw new ApiError('endsAtDurationInHrs must be a number', 400, 'VALIDATION_ERROR');
 
-        if(endsAtNum > maxEndsAtEpoch) throw new ApiError('auction cannot end later than 10 days from now', 400, 'VALIDATION_ERROR')
+    const MIN_DURATION_HRS = 1; // 1 hour
+    const MAX_DURATION_HRS = 24 * 10; // 10 days
 
-        const nowDate = new Date(nowDateEpoch);
+    if (durationHrs < MIN_DURATION_HRS) throw new ApiError('auction must run for at least 1 hour', 400, 'VALIDATION_ERROR');
+    if (durationHrs > MAX_DURATION_HRS) throw new ApiError('auction cannot run longer than 10 days', 400, 'VALIDATION_ERROR');
 
-        const endsAtDate = new Date(endsAtNum);
+    const endsAtDate = new Date(Date.now() + (durationHrs * 60 * 60 * 1000));   
 
-        const auction = {   
-            title,
-            host_id: hostId,
-            description,
-            starting_price: startingPrice, 
-            ends_at: endsAtDate
-        }
+    const auction = {
+        title,
+        host_id: hostId,
+        description,
+        starting_price: startingPrice,
+        ends_at: endsAtDate,
+        status: 'ACTIVE', // ACTIVE or ENDED
+        image_url: imageURL
+    };
 
-        let dbResponse;
-        try {
-            dbResponse = await db.insert(auctions).values(auction).returning();
-        } catch (err) {
-            console.error("DB ERROR:", err);
-            throw new ApiError(err.message, 500, 'DB_ERROR');
-        }
+    let dbResponse;
+    try {
+        dbResponse = await db.insert(auctions).values(auction).returning();
+    } catch (err) {
+        console.error("DB ERROR:", err);
+        throw new ApiError(err.message, 500, 'DB_ERROR');
+    }
 
-        const response = new ApiResponse(true, 201, 'auction created', {dbResponse});
+    const response = new ApiResponse(true, 201, 'auction created', { auction: dbResponse[0] });
 
-        return res.status(response.statusCode).json(response);
-
-})
+    return res.status(response.statusCode).json(response);
+});
