@@ -15,7 +15,7 @@ export const createAuction = asyncHandler(async (req, res) => {
 
     if (!hostId) throw new ApiError('host id wasnt found in access token paylaod, get token on api/v1/auth/login', 400, 'VALIDATION_ERROR');
 
-    if (!title || !description || !startingPrice || !endsAtDurationInHrs) {
+    if (!title || !description || startingPrice == null || endsAtDurationInHrs == null) {
         throw new ApiError('all fields are required', 400, 'VALIDATION_ERROR');
     }
 
@@ -77,5 +77,37 @@ export const getAuctions = asyncHandler(async (req, res) => {
         auctions: activeAuctions
     });
 
+    return res.status(response.statusCode).json(response);
+});
+
+// get one auction by id
+export const getAuction = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    let auctionRecord;
+
+    try {
+        const auctionRows = await db
+            .select()
+            .from(auctions)
+            .where(eq(auctions.id, id));
+
+        auctionRecord = auctionRows[0];
+    } catch (err) {
+        console.error("DB ERROR:", err);
+        throw new ApiError(err.message, 500, "DB_ERROR");
+    }
+
+    if (!auctionRecord) {
+        const response = new ApiResponse(false, 404, "auction does not exist", null);
+        return res.status(response.statusCode).json(response);
+    }
+
+    if (auctionRecord.status === "ENDED") {
+        const response = new ApiResponse(false, 200, "auction has ended", { auction: auctionRecord });
+        return res.status(response.statusCode).json(response);
+    }
+
+    const response = new ApiResponse(true, 200, "auction fetched", { auction: auctionRecord });
     return res.status(response.statusCode).json(response);
 });

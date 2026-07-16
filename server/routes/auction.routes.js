@@ -1,14 +1,16 @@
 import { Router } from "express";
-import { createAuction, getAuctions } from "../controllers/auction.controller.js";
+import { createAuction, getAuction, getAuctions } from "../controllers/auction.controller.js";
 import authorize from '../middlewares/authorize.middleware.js'
 
 const auctionRouter = Router();
 
 // auctions
+// get all auctions
 auctionRouter.get('/', authorize, getAuctions);
+// create an auction
 auctionRouter.post('/', authorize, createAuction);
-
-auctionRouter.get('/:id', (req, res) => res.json({msg: 'get the specified auction'}));
+// get a specific auction through id
+auctionRouter.get('/:id', authorize ,getAuction);
 auctionRouter.patch('/:id', (req, res) => res.json({msg: 'update the specified auction'}));
 auctionRouter.delete('/:id', (req, res) => res.json({msg: 'delete the specified auction'}));
 // bids (separate controller from auctions)
