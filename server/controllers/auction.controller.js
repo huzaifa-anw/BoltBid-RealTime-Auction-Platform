@@ -21,6 +21,8 @@ export const createAuction = asyncHandler(async (req, res) => {
 
     if (startingPrice <= 0) throw new ApiError('starting price should be a positive integer', 400, 'VALIDATION_ERROR');
 
+    if (endsAtDurationInHrs <= 0) throw new ApiError('auction end duartion (endsAtDurationInHrs) should be a positive integer', 400, 'VALIDATION_ERROR');
+
     if (title.length <= 0 || title.length > 254) throw new ApiError('title should be between 1-254 characters', 400, 'VALIDATION_ERROR');
 
     if (description.length <= 0 || description.length > 254) throw new ApiError('description should be between 1-254 characters', 400, 'VALIDATION_ERROR');
