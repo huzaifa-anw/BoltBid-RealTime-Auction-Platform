@@ -1,4 +1,5 @@
 import asyncHandler from "express-async-handler";
+import { eq } from "drizzle-orm";
 import ApiError from '../utils/ApiError.js'
 import { db } from "../db/db.js";
 import { auctions } from "../db/schema.js";
@@ -54,6 +55,27 @@ export const createAuction = asyncHandler(async (req, res) => {
     }
 
     const response = new ApiResponse(true, 201, 'auction created', { auction: dbResponse[0] });
+
+    return res.status(response.statusCode).json(response);
+});
+
+// get all auctions
+export const getAuctions = asyncHandler(async (req, res) => {
+    let activeAuctions;
+
+    try {
+        activeAuctions = await db
+            .select()
+            .from(auctions)
+            .where(eq(auctions.status, "ACTIVE"));
+    } catch (err) {
+        console.error("DB ERROR:", err);
+        throw new ApiError(err.message, 500, "DB_ERROR");
+    }
+
+    const response = new ApiResponse(true, 200, "auctions fetched", {
+        auctions: activeAuctions
+    });
 
     return res.status(response.statusCode).json(response);
 });
