@@ -107,7 +107,7 @@ export const getAuction = asyncHandler(async (req, res) => {
     }
 
     if (!auctionRecord) {
-        throw new ApiError("auction does not exist", 404, 'AUCTION_DOES_NOT_EXIST');
+        throw new ApiError("auction does not exist", 404, 'AUCTION_NOT_FOUND');
     }
 
     if (auctionRecord.status === "ENDED") {
@@ -117,6 +117,90 @@ export const getAuction = asyncHandler(async (req, res) => {
     const response = new ApiResponse(true, 200, "auction fetched", { auction: auctionRecord });
     return res.status(response.statusCode).json(response);
 });
+
+// update auction 
+export const updateAuction = asyncHandler(async (req, res) => {
+    const hostId = req.user.id;
+    const allowedField = 'extendByHours';
+
+    const requestFields = Object.keys(req.body);
+
+    const invalidFields = requestFields.filter(field => {
+        return field !== allowedField;
+    })
+
+    if (invalidFields.length > 0) throw new ApiError(
+        `Invalid field(s): ${invalidFields.join(", ")}`,
+        400,
+        "VALIDATION_ERROR"
+    );
+
+    const { extendByHours } = req.body;
+    const parsedExtendByHours = Number(extendByHours);
+    const { id } = req.params;
+
+    let auction;
+
+    try {
+        const auctionRows = await db
+            .select()
+            .from(auctions)
+            .where(eq(auctions.id, id));
+
+        auction = auctionRows[0];
+    } catch (err) {
+        console.error("DB ERROR:", err);
+        throw new ApiError(err.message, 500, "DB_ERROR");
+    }
+
+    if (!auction) throw new ApiError('auction doesnt exist', 404, 'AUCTION_NOT_FOUND');
+
+    if (auction.host_id !== hostId) throw new ApiError("user does not have permission to update the requested auction", 403, 'FORBIDDEN')
+
+    if (auction.status === "ENDED") {
+        throw new ApiError("auction has ended, cannot extend auction duration after it has ended", 409 , 'AUCTION_ENDED');
+    }
+
+    if (!Number.isFinite(parsedExtendByHours) || !Number.isInteger(parsedExtendByHours) || parsedExtendByHours <= 0) {
+        throw new ApiError('extension hours should be a positive whole number greater than 0', 400, 'VALIDATION_ERROR');
+    }
+
+    const MAX_DURATION_HRS = 24 * 10; // 10 days
+
+    const maxEndsAt = new Date(
+        auction.created_at.getTime() + MAX_DURATION_HRS * 60 * 60 * 1000
+    );
+
+    const newEndsAt = new Date(
+        auction.ends_at.getTime() + parsedExtendByHours * 60 * 60 * 1000
+    );
+
+    if (newEndsAt > maxEndsAt) {
+        throw new ApiError(
+            "Auction duration cannot exceed 10 days from creation.",
+            400,
+            "VALIDATION_ERROR"
+        );
+    }
+
+    let updatedAuction;
+    
+    try {
+        const updatedAuctionRows = await db.update(auctions)
+            .set({ends_at: newEndsAt})
+            .where(eq(auctions.id, id))
+            .returning();
+
+        updatedAuction = updatedAuctionRows[0];
+    } catch (err) {
+        console.error("DB ERROR:", err);
+        throw new ApiError(err.message, 500, "DB_ERROR");
+    }
+
+    const response = new ApiResponse(true, 200, 'auction updated successfully', updatedAuction);
+    return res.status(response.statusCode).json(response);
+
+})
 
 // delete auction by id
 export const deleteAuction = asyncHandler(async (req, res) => {
@@ -140,10 +224,10 @@ export const deleteAuction = asyncHandler(async (req, res) => {
     }
 
     if (!auction) {
-        throw new ApiError("auction does not exist", 404, 'AUCTION_DOES_NOT_EXIST');
+        throw new ApiError("auction does not exist", 404, 'AUCTION_NOT_FOUND');
     }
 
-    if (userId !== auction.host_id) throw new ApiError("user does not have permission to delete the requested auction", 401, 'UNAUTHORIZED');
+    if (userId !== auction.host_id) throw new ApiError("user does not have permission to delete the requested auction", 403, 'FORBIDDEN');
 
     // delete the auction
 
@@ -154,6 +238,6 @@ export const deleteAuction = asyncHandler(async (req, res) => {
         throw new ApiError(err.message, 500, "DB_ERROR");
     }
 
-    const response = new ApiResponse(true, 200, null);
+    const response = new ApiResponse(true, 204, null);
     return res.status(response.statusCode).json(response);
 });

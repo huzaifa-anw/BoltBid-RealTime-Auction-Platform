@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createAuction, getAuction, getAuctions, deleteAuction } from "../controllers/auction.controller.js";
+import { createAuction, getAuction, getAuctions, deleteAuction, updateAuction } from "../controllers/auction.controller.js";
 import authorize from '../middlewares/authorize.middleware.js'
 
 const auctionRouter = Router();
@@ -12,7 +12,7 @@ auctionRouter.post('/', authorize, createAuction);
 // get a specific auction through id
 auctionRouter.get('/:id', authorize ,getAuction);
 // update a specific auction by id 
-auctionRouter.patch('/:id', (req, res) => res.json({msg: 'update the specified auction'}));
+auctionRouter.patch('/:id', authorize, updateAuction);
 // delete an auction by id
 auctionRouter.delete('/:id', authorize, deleteAuction);
 
