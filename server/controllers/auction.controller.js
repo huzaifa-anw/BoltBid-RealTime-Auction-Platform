@@ -15,36 +15,42 @@ export const createAuction = asyncHandler(async (req, res) => {
 
     if (!hostId) throw new ApiError('host id wasnt found in access token paylaod, get token on api/v1/auth/login', 400, 'VALIDATION_ERROR');
 
-    if (!title || !description || startingPrice == null || endsAtDurationInHrs == null) {
+    const normalizedTitle = typeof title === 'string' ? title.trim() : '';
+    const normalizedDescription = typeof description === 'string' ? description.trim() : '';
+
+    if (!normalizedTitle || !normalizedDescription || startingPrice == null || endsAtDurationInHrs == null) {
         throw new ApiError('all fields are required', 400, 'VALIDATION_ERROR');
     }
 
-    if (startingPrice <= 0) throw new ApiError('starting price should be a positive integer', 400, 'VALIDATION_ERROR');
+    if (normalizedTitle.length > 254) throw new ApiError('title should be between 1-254 characters', 400, 'VALIDATION_ERROR');
+    if (normalizedDescription.length > 254) throw new ApiError('description should be between 1-254 characters', 400, 'VALIDATION_ERROR');
 
-    if (endsAtDurationInHrs <= 0) throw new ApiError('auction end duartion (endsAtDurationInHrs) should be a positive integer', 400, 'VALIDATION_ERROR');
+    const parsedStartingPrice = Number(startingPrice);
+    const parsedDurationHrs = Number(endsAtDurationInHrs);
 
-    if (title.length <= 0 || title.length > 254) throw new ApiError('title should be between 1-254 characters', 400, 'VALIDATION_ERROR');
+    if (!Number.isFinite(parsedStartingPrice) || !Number.isInteger(parsedStartingPrice) || parsedStartingPrice <= 0) {
+        throw new ApiError('starting price must be a positive whole number', 400, 'VALIDATION_ERROR');
+    }
 
-    if (description.length <= 0 || description.length > 254) throw new ApiError('description should be between 1-254 characters', 400, 'VALIDATION_ERROR');
-
-    const durationHrs = Number(endsAtDurationInHrs);
-    if (!Number.isFinite(durationHrs)) throw new ApiError('endsAtDurationInHrs must be a number', 400, 'VALIDATION_ERROR');
+    if (!Number.isFinite(parsedDurationHrs) || !Number.isInteger(parsedDurationHrs) || parsedDurationHrs <= 0) {
+        throw new ApiError('endsAtDurationInHrs must be a positive whole number', 400, 'VALIDATION_ERROR');
+    }
 
     const MIN_DURATION_HRS = 1; // 1 hour
     const MAX_DURATION_HRS = 24 * 10; // 10 days
 
-    if (durationHrs < MIN_DURATION_HRS) throw new ApiError('auction must run for at least 1 hour', 400, 'VALIDATION_ERROR');
-    if (durationHrs > MAX_DURATION_HRS) throw new ApiError('auction cannot run longer than 10 days', 400, 'VALIDATION_ERROR');
+    if (parsedDurationHrs < MIN_DURATION_HRS) throw new ApiError('auction must run for at least 1 hour', 400, 'VALIDATION_ERROR');
+    if (parsedDurationHrs > MAX_DURATION_HRS) throw new ApiError('auction cannot run longer than 10 days', 400, 'VALIDATION_ERROR');
 
-    const endsAtDate = new Date(Date.now() + (durationHrs * 60 * 60 * 1000));   
+    const endsAtDate = new Date(Date.now() + (parsedDurationHrs * 60 * 60 * 1000));
 
     const auction = {
-        title,
+        title: normalizedTitle,
         host_id: hostId,
-        description,
-        starting_price: startingPrice,
+        description: normalizedDescription,
+        starting_price: parsedStartingPrice,
         ends_at: endsAtDate,
-        status: 'ACTIVE', // ACTIVE or ENDED
+        status: 'ACTIVE',
         image_url: imageURL
     };
 
@@ -101,15 +107,53 @@ export const getAuction = asyncHandler(async (req, res) => {
     }
 
     if (!auctionRecord) {
-        const response = new ApiResponse(false, 404, "auction does not exist", null);
-        return res.status(response.statusCode).json(response);
+        throw new ApiError("auction does not exist", 404, 'AUCTION_DOES_NOT_EXIST');
     }
 
     if (auctionRecord.status === "ENDED") {
-        const response = new ApiResponse(false, 200, "auction has ended", { auction: auctionRecord });
-        return res.status(response.statusCode).json(response);
+        throw new ApiError("auction has ended", 409 , 'AUCTION_ENDED');
     }
 
     const response = new ApiResponse(true, 200, "auction fetched", { auction: auctionRecord });
+    return res.status(response.statusCode).json(response);
+});
+
+// delete auction by id
+export const deleteAuction = asyncHandler(async (req, res) => {
+    const {id} = req.params;
+
+    // check if the user requesting for deletion owns the auction
+    const userId = req.user.id;
+    
+    let auction;
+
+    try {
+        const auctionRows = await db
+            .select()
+            .from(auctions)
+            .where(eq(auctions.id, id));
+            
+        auction = auctionRows[0]
+    } catch (err) {
+        console.error("DB ERROR:", err);
+        throw new ApiError(err.message, 500, "DB_ERROR");
+    }
+
+    if (!auction) {
+        throw new ApiError("auction does not exist", 404, 'AUCTION_DOES_NOT_EXIST');
+    }
+
+    if (userId !== auction.host_id) throw new ApiError("user does not have permission to delete the requested auction", 401, 'UNAUTHORIZED');
+
+    // delete the auction
+
+    try {
+        await db.delete(auctions).where(eq(auctions.id, id));
+    } catch (err) {
+        console.error("DB ERROR:", err);
+        throw new ApiError(err.message, 500, "DB_ERROR");
+    }
+
+    const response = new ApiResponse(true, 200, null);
     return res.status(response.statusCode).json(response);
 });
