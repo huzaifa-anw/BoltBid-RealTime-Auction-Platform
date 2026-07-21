@@ -1,4 +1,6 @@
 import express from 'express';
+import {createServer} from 'http'
+import { Server } from "socket.io";
 import 'dotenv/config';
 import authRouter from './routes/auth.routes.js';
 import auctionRouter from './routes/auction.routes.js';
@@ -7,6 +9,8 @@ import logger from './middlewares/logger.middleware.js'
 import errorHandler from './middlewares/errorHandler.middleware.js'
 
 const app = express();
+const server = createServer(app);
+const io = new Server(server);
 
 const PORT = process.env.PORT || 5000;
 
@@ -22,6 +26,6 @@ app.use('/api/v1/users', userRouter);
 
 app.use(errorHandler);
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`BoltBid server is running on port: ${PORT}`);
 })
