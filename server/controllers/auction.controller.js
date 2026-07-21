@@ -137,7 +137,7 @@ export const updateAuction = asyncHandler(async (req, res) => {
 
     const { extendByHours } = req.body;
     const parsedExtendByHours = Number(extendByHours);
-    const { id } = req.params;
+    const { id } = req.params;  
 
     let auction;
 
@@ -230,7 +230,6 @@ export const deleteAuction = asyncHandler(async (req, res) => {
     if (userId !== auction.host_id) throw new ApiError("user does not have permission to delete the requested auction", 403, 'FORBIDDEN');
 
     // delete the auction
-
     try {
         await db.delete(auctions).where(eq(auctions.id, id));
     } catch (err) {
