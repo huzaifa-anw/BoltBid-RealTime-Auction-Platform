@@ -1,4 +1,18 @@
 const auctionSocketSetup = (io) => {
+    // auth middleware for socket 
+    io.use(async (socket, next) => {
+        const token = socket.handshake.auth.token;
+        if (!token) throw new Error('auth token/access token not found');
+
+        try {
+            const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET); // sync form, throws directly
+            socket.user = decoded;
+            next();
+        } catch (err) {
+            throw new Error('access token could not be verified',);
+        }
+    })
+
     io.on('connection', (socket) => {
 
         socket.on('join-auction', (auctionId) => {
@@ -18,7 +32,8 @@ const auctionSocketSetup = (io) => {
 const handlePlaceBid = async (io, socket, data) => {
     try {
         // Validate data
-        const {}
+        const {auctionId, bidderId, ammount} = data;
+
         // Check authentication
 
         // Start transaction
