@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Socket.IO Test</title>
+</head>
+<body>
+
+    <button id="connect">Connect</button>
+    <button id="join">Join Auction</button>
+    <button id="bid">Place Bid</button>
+
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+
+    <script>
+        let socket;
+
+        document.getElementById("connect").onclick = () => {
+            socket = io("http://localhost:3000", {
+                auth: {
+                    token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImUxMmUxNTFiLTIzMTktNGIxZC04MmZkLTJmODM0YzcwZTZlZSIsIm5hbWUiOiJURVNUIFVTRVIiLCJlbWFpbCI6InRlc3R1c2VyQGdtYWlsLmNvbSIsImlhdCI6MTc4NDczMTAyNiwiZXhwIjoxNzg0ODE3NDI2fQ.PkDjz2wsyut6rP0uYq85XMtfYDNMHPy8ZqfdJw3wOLo"
+                }
+            });
+
+            socket.on("connect", () => {
+                console.log("Connected:", socket.id);
+            });
+
+            socket.on("disconnect", () => {
+                console.log("Disconnected");
+            });
+
+            socket.on("connect_error", (err) => {
+                console.error("Connection Error:", err.message);
+            });
+
+            // Listen for any events your server emits
+            socket.on("bid-updated", (data) => {
+                console.log("Bid Updated:", data);
+            });
+            socket.on("place-bid-error", (err) => {
+                console.log("Place Bid Error:", err);
+            });
+
+            socket.on("error", (err) => {
+                console.log("Server Error:", err);
+            });
+        };
+
+        document.getElementById("join").onclick = () => {
+            socket.emit("join-auction", "auction-id-here");
+        };
+
+        document.getElementById("bid").onclick = () => {
+            socket.emit("place-bid", {
+                auctionId: "93e4a406-587a-4667-8220-a99489753d1b",
+                bidderId: "e12e151b-2319-4b1d-82fd-2f834c70e6ee",
+                amount: 5000
+            });
+        };
+    </script>
+
+</body>
+</html>
