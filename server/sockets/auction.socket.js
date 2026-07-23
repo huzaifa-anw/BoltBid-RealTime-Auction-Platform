@@ -38,14 +38,15 @@ const auctionSocketSetup = (io) => {
 const handlePlaceBid = async (io, socket, data) => {
     try {
         // Validate data
-        const {auctionId, bidderId, amount} = data;
+        const {auctionId, amount} = data;
 
-        if (!auctionId || !bidderId || !amount) throw Error("all fields are required (auctionId, bidderId, ammount)");
+        if (!auctionId || typeof amount !== 'number' || Number.isNaN(amount)) throw Error("all fields are required (auctionId, ammount)");
 
         // Check authentication
-        if (bidderId != socket.user.id) throw Error("cannot place bid on behalf of other's")
+        const bidderId = socket.user.id;
 
         // Start transaction
+        let response;
         await db.transaction(async (tx) => {
             const result = await tx.execute(sql`
                 SELECT *
@@ -57,33 +58,47 @@ const handlePlaceBid = async (io, socket, data) => {
             console.log(result.rows[0]);
             // Fetch auction
             const auction = result.rows[0];
-            // auction = {
-            //   id: '93e4a406-587a-4667-8220-a99489753d1b',
-            //   title: 'A really comfy bed',
-            //   host_id: 'e12e151b-2319-4b1d-82fd-2f834c70e6ee',
-            //   description: 'just a comfy and cozy bed',
-            //   starting_price: 15000,
-            //   highest_bid: null,
-            //   highest_bidder_id: null,
-            //   ends_at: '2026-07-19 00:34:28.22+00',
-            //   created_at: '2026-07-17 15:34:26.834212+00',
-            //   updated_at: '2026-07-17 15:34:26.834212+00',
-            //   image_url: '...',
-            //   status: 'ACTIVE'
-            // }
 
             // Validate auction state
+            if(!auction) throw Error("auction does not exist")
 
-            // Validate bid amount
+            if (auction.host_id === bidderId) throw Error("cannot bid on your own auction");
 
-            // Insert bid
+            if (auction.status !== 'ACTIVE') throw Error("auction has ended");
 
-            // Update auction
+            const hasExpired = new Date(auction.ends_at) <= new Date();
+            if (hasExpired) throw Error("auction has ended")
 
-            // Commit transaction
+            const currentPrice = auction.highest_bid ?? auction.starting_price;
+
+            if (amount <= currentPrice)
+            throw new Error("Bid must be higher than current price");
+
+            const bid = {
+                auction_id: auctionId,
+                bidder_id: bidderId,
+                amount
+            }
+        
+            const dbResponse = await tx.insert(bids).values(bid).returning();   
+            response = dbResponse[0];
+
+            await tx.update(auctions)
+            .set({
+                highest_bid: amount,
+                highest_bidder_id: bidderId,
+            })
+            .where(eq(auctions.id, auctionId)) 
+            // transaction commits
         })
 
-        // Broadcast to everyone in the room
+        // broadcast to all sockets in room (finally :) )
+        io.in(`auction:${auctionId}`).emit('bid-placed', 
+            {
+                bid: response,
+            }
+        );
+
     } catch (e) {
         socket.emit('place-bid-error', {
             message: e.message
