@@ -1,8 +1,7 @@
-### write controllers for bids
-### consider time sync issues and checking for status issue
 ### test http routes throrouhgly
+### consider time sync issues and checking for status issue
 ### build sweeper function
-### socket integration and logic
+### work on client side
 
 ### ------------------------------------------------------------------
 ### add zod/express validator for schema vallidation

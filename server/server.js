@@ -9,6 +9,7 @@ import logger from './middlewares/logger.middleware.js'
 import errorHandler from './middlewares/errorHandler.middleware.js'
 import auctionSocketSetup from './sockets/auction.socket.js';
 import cors from 'cors';
+import sweeper from './utils/sweeper.js';
 
 const app = express();
 const server = createServer(app);
@@ -42,4 +43,5 @@ app.use(errorHandler);
 
 server.listen(PORT, () => {
     console.log(`BoltBid server is running on port: ${PORT}`);
+    sweeper();
 })
