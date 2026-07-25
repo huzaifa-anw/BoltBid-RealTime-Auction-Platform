@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { createAuction, getAuction, getAuctions, deleteAuction, updateAuction } from "../controllers/auction.controller.js";
+import { getAuctionBids } from "../controllers/bid.controller.js";
 import authorize from '../middlewares/authorize.middleware.js'
 
 const auctionRouter = Router();
@@ -16,9 +17,7 @@ auctionRouter.patch('/:id', authorize, updateAuction);
 // delete an auction by id
 auctionRouter.delete('/:id', authorize, deleteAuction);
 
-// NOT SUPPORTED ANYMORE AS SOCKET HANDLER WILL HANDLE BIDDING LOGIC
 // bids (separate controller from auctions)
-auctionRouter.post('/:id/bids', (req, res) => res.json({msg: 'make a bid'}));
-auctionRouter.get('/:id/bids', (req, res) => res.json({msg: 'get all bids for the given auction id'}))
+auctionRouter.get('/:id/bids', authorize, getAuctionBids);
 
 export default auctionRouter;
