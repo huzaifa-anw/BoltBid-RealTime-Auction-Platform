@@ -1,5 +1,5 @@
 import asyncHandler from "express-async-handler";
-import { eq } from "drizzle-orm";
+import { eq, gt } from "drizzle-orm";
 import ApiError from '../utils/ApiError.js'
 import { db } from "../db/db.js";
 import { auctions } from "../db/schema.js";
@@ -75,7 +75,10 @@ export const getAuctions = asyncHandler(async (req, res) => {
         activeAuctions = await db
             .select()
             .from(auctions)
-            .where(eq(auctions.status, "ACTIVE"));
+            .where(and(
+                eq(auctions.status, 'ENDED'),
+                gt(auctions.ends_at, new Date())
+            ));
     } catch (err) {
         console.error("DB ERROR:", err);
         throw new ApiError(err.message, 500, "DB_ERROR");
@@ -98,8 +101,9 @@ export const getAuction = asyncHandler(async (req, res) => {
         const auctionRows = await db
             .select()
             .from(auctions)
-            .where(eq(auctions.id, id));
-
+            .where(
+                eq(auctions.id, id),
+            );
         auctionRecord = auctionRows[0];
     } catch (err) {
         console.error("DB ERROR:", err);
@@ -110,7 +114,7 @@ export const getAuction = asyncHandler(async (req, res) => {
         throw new ApiError("auction does not exist", 404, 'AUCTION_NOT_FOUND');
     }
 
-    if (auctionRecord.status === "ENDED") {
+    if (auctionRecord.status === "ENDED" || new Date(auctionRecord.ends_at).getTime() <= Date.now()) {
         throw new ApiError("auction has ended", 409 , 'AUCTION_ENDED');
     }
 
