@@ -13,7 +13,7 @@ export const createAuction = asyncHandler(async (req, res) => {
 
     const hostId = req.user.id;
 
-    if (!hostId) throw new ApiError('host id wasnt found in access token paylaod, get token on api/v1/auth/login', 400, 'VALIDATION_ERROR');
+    if (!hostId) throw new ApiError('host id wasnt found in access token paylaod, get token on api/v1/auth/login', 401, 'UNAUTHORIZED');
 
     const normalizedTitle = typeof title === 'string' ? title.trim() : '';
     const normalizedDescription = typeof description === 'string' ? description.trim() : '';
@@ -94,6 +94,7 @@ export const getAuctions = asyncHandler(async (req, res) => {
 // get one auction by id
 export const getAuction = asyncHandler(async (req, res) => {
     const { id } = req.params;
+    if (!id) throw new ApiError("auction id not founf", 400, "VALIDATION_ERROR")
 
     let auctionRecord;
 
@@ -125,6 +126,7 @@ export const getAuction = asyncHandler(async (req, res) => {
 // update auction 
 export const updateAuction = asyncHandler(async (req, res) => {
     const hostId = req.user.id;
+    if (!hostId) throw new ApiError('host id wasnt found in access token paylaod, get token on api/v1/auth/login', 401, 'UNAUTHORIZED');
     const allowedField = 'extendByHours';
 
     const requestFields = Object.keys(req.body);
@@ -209,9 +211,13 @@ export const updateAuction = asyncHandler(async (req, res) => {
 // delete auction by id
 export const deleteAuction = asyncHandler(async (req, res) => {
     const {id} = req.params;
+    if (!id) throw new ApiError("auction id not founf", 400, "VALIDATION_ERROR")
+
 
     // check if the user requesting for deletion owns the auction
     const userId = req.user.id;
+    if (!userId) throw new ApiError('user id wasnt found in access token paylaod, get token on api/v1/auth/login', 401, 'UNAUTHORIZED');
+
     
     let auction;
 

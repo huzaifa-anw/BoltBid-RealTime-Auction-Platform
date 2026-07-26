@@ -1,5 +1,5 @@
-import { lte } from 'drizzle-orm';
-import db from '../db/db.js';
+import { lte, and, eq } from 'drizzle-orm';
+import { db } from '../db/db.js';
 import { auctions } from '../db/schema.js';
 
 const sweeper = () => {
@@ -14,9 +14,9 @@ const sweeper = () => {
                         eq(auctions.status, 'ACTIVE'),
                         lte(auctions.ends_at, new Date())
                     )
+                )
                 .returning({ id: auctions.id })
-            );
-            console.log(`Ended ${response.rowCount ?? 0} auctions`);
+            console.log(`Ended ${response.length ?? 0} auctions`);
         } catch (e) {
             console.error("Auction sweeper failed:", e);
         }
