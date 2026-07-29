@@ -7,7 +7,7 @@ const auctionRouter = Router();
 
 // auctions
 // get all auctions
-auctionRouter.get('/', authorize, getAuctions);
+auctionRouter.get('/', getAuctions);
 // create an auction
 auctionRouter.post('/', authorize, createAuction);
 // get a specific auction through id

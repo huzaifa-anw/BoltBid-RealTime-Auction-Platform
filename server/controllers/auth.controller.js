@@ -17,6 +17,23 @@ export const signupUser = asyncHandler(async (req, res) => {
 
     const sanitizedEmail = email.toLowerCase().trim();
 
+    let existingUser;
+
+    try {
+        existingUser = await db
+            .select()
+            .from(users)
+            .where(eq(users.email, sanitizedEmail))
+            .limit(1);
+    } catch (err) {
+        console.error("DB ERROR:", err.cause || err);
+        throw new ApiError("Database unavailable", 503, "DB_DOWN");
+    }
+
+    if (existingUser.length > 0) {
+        throw new ApiError("Email already exists", 409, "USER_EXISTS");
+    }
+
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
@@ -31,10 +48,10 @@ export const signupUser = asyncHandler(async (req, res) => {
     try {
         dbResponse = await db.insert(users).values(user).returning();
     } catch (err) {
-        if (err.code === "23505") {
+        // second check for TOCTOU error
+        if (err.cause.code === '23505' || err.cause.code === 23505) {
             throw new ApiError("Email already exists", 409, "USER_EXISTS");
         }
-
         console.error("DB ERROR:", err.cause || err);
         throw new ApiError("Database unavailable", 503, "DB_DOWN");
     }
