@@ -12,7 +12,7 @@ export const signupUser = asyncHandler(async (req, res) => {
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
-        throw new ApiError("All fields are required", 400, "VALIDATION_ERROR");
+        throw new ApiError("All fields are required (name, email, password)", 400, "VALIDATION_ERROR");
     }
 
     const sanitizedEmail = email.toLowerCase().trim();
@@ -56,7 +56,7 @@ export const loginUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-        throw new ApiError("All fields are required", 400, "VALIDATION_ERROR");
+        throw new ApiError("All fields are required (email, password)", 400, "VALIDATION_ERROR");
     }
 
     const sanitizedEmail = email.toLowerCase().trim();

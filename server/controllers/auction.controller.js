@@ -211,7 +211,7 @@ export const updateAuction = asyncHandler(async (req, res) => {
 // delete auction by id
 export const deleteAuction = asyncHandler(async (req, res) => {
     const {id} = req.params;
-    if (!id) throw new ApiError("auction id not founf", 400, "VALIDATION_ERROR")
+    if (!id) throw new ApiError("auction id not found", 400, "VALIDATION_ERROR")
 
 
     // check if the user requesting for deletion owns the auction
