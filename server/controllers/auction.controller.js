@@ -1,5 +1,5 @@
 import asyncHandler from "express-async-handler";
-import { eq, gt } from "drizzle-orm";
+import { eq, gt, and } from "drizzle-orm";
 import ApiError from '../utils/ApiError.js'
 import { db } from "../db/db.js";
 import { auctions } from "../db/schema.js";
@@ -7,40 +7,40 @@ import ApiResponse from "../utils/ApiResponse.js";
 
 export const createAuction = asyncHandler(async (req, res) => {
     // endsAtDurationInHrs is how many hours from now the auction should stay open.
-    // Client must send whole hours only — any conversion from days happens client-side.
+    // Client must send whole hours only — any conversion from days happens server-side.
     // the server does not accept anything other than hours
     const { title, description, startingPrice, imageURL, endsAtDurationInHrs } = req.body;
 
     const hostId = req.user.id;
 
-    if (!hostId) throw new ApiError('host id wasnt found in access token paylaod, get token on api/v1/auth/login', 401, 'UNAUTHORIZED');
+    if (!hostId) throw new ApiError('Host id wasnt found in access token paylaod, get token on api/v1/auth/login', 401, 'MISSING_HOST_ID');
 
     const normalizedTitle = typeof title === 'string' ? title.trim() : '';
     const normalizedDescription = typeof description === 'string' ? description.trim() : '';
 
-    if (!normalizedTitle || !normalizedDescription || startingPrice == null || endsAtDurationInHrs == null) {
-        throw new ApiError('all fields are required', 400, 'VALIDATION_ERROR');
+    if (!normalizedTitle || !normalizedDescription || !imageURL || startingPrice == null || endsAtDurationInHrs == null) {
+        throw new ApiError('all fields are required, (title, description, startingPrice, imageURL, endsAtDurationInHrs)', 400, 'MISSING_REQUIRED_FIELDS');
     }
 
-    if (normalizedTitle.length > 254) throw new ApiError('title should be between 1-254 characters', 400, 'VALIDATION_ERROR');
-    if (normalizedDescription.length > 254) throw new ApiError('description should be between 1-254 characters', 400, 'VALIDATION_ERROR');
+    if (normalizedTitle.length > 254) throw new ApiError('title should be between 1-254 characters', 400, 'INVALID_TITLE_LENGTH');
+    if (normalizedDescription.length > 254) throw new ApiError('description should be between 1-254 characters', 400, 'INVALID_DESCRIPTION_LENGTH');
 
     const parsedStartingPrice = Number(startingPrice);
     const parsedDurationHrs = Number(endsAtDurationInHrs);
 
     if (!Number.isFinite(parsedStartingPrice) || !Number.isInteger(parsedStartingPrice) || parsedStartingPrice <= 0) {
-        throw new ApiError('starting price must be a positive whole number', 400, 'VALIDATION_ERROR');
+        throw new ApiError('starting price must be a positive whole number', 400, 'INVALID_STARTING_PRICE');
     }
 
     if (!Number.isFinite(parsedDurationHrs) || !Number.isInteger(parsedDurationHrs) || parsedDurationHrs <= 0) {
-        throw new ApiError('endsAtDurationInHrs must be a positive whole number', 400, 'VALIDATION_ERROR');
+        throw new ApiError('endsAtDurationInHrs must be a positive whole number', 400, 'INVALID_DURATION');
     }
 
     const MIN_DURATION_HRS = 1; // 1 hour
     const MAX_DURATION_HRS = 24 * 10; // 10 days
 
-    if (parsedDurationHrs < MIN_DURATION_HRS) throw new ApiError('auction must run for at least 1 hour', 400, 'VALIDATION_ERROR');
-    if (parsedDurationHrs > MAX_DURATION_HRS) throw new ApiError('auction cannot run longer than 10 days', 400, 'VALIDATION_ERROR');
+    if (parsedDurationHrs < MIN_DURATION_HRS) throw new ApiError('auction must run for at least 1 hour', 400, 'DURATION_TOO_SHORT');
+    if (parsedDurationHrs > MAX_DURATION_HRS) throw new ApiError('auction cannot run longer than 10 days', 400, 'DURATION_TOO_LONG');
 
     const endsAtDate = new Date(Date.now() + (parsedDurationHrs * 60 * 60 * 1000));
 
@@ -51,7 +51,7 @@ export const createAuction = asyncHandler(async (req, res) => {
         starting_price: parsedStartingPrice,
         ends_at: endsAtDate,
         status: 'ACTIVE',
-        image_url: imageURL
+        image_url: imageURL ?? '',
     };
 
     let dbResponse;
@@ -76,7 +76,7 @@ export const getAuctions = asyncHandler(async (req, res) => {
             .select()
             .from(auctions)
             .where(and(
-                eq(auctions.status, 'ENDED'),
+                eq(auctions.status, 'ACTIVE'),
                 gt(auctions.ends_at, new Date())
             ));
     } catch (err) {
@@ -94,7 +94,6 @@ export const getAuctions = asyncHandler(async (req, res) => {
 // get one auction by id
 export const getAuction = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    if (!id) throw new ApiError("auction id not founf", 400, "VALIDATION_ERROR")
 
     let auctionRecord;
 
@@ -107,6 +106,7 @@ export const getAuction = asyncHandler(async (req, res) => {
             );
         auctionRecord = auctionRows[0];
     } catch (err) {
+        if (err.cause?.code === '22P02') throw new ApiError('invalid auction ID', 400, 'INVALID_AUCTION_ID')
         console.error("DB ERROR:", err);
         throw new ApiError(err.message, 500, "DB_ERROR");
     }
@@ -126,7 +126,7 @@ export const getAuction = asyncHandler(async (req, res) => {
 // update auction 
 export const updateAuction = asyncHandler(async (req, res) => {
     const hostId = req.user.id;
-    if (!hostId) throw new ApiError('host id wasnt found in access token paylaod, get token on api/v1/auth/login', 401, 'UNAUTHORIZED');
+    if (!hostId) throw new ApiError('host id wasnt found in access token paylaod, get token on api/v1/auth/login', 401, 'MISSING_HOST_ID');
     const allowedField = 'extendByHours';
 
     const requestFields = Object.keys(req.body);
@@ -138,10 +138,11 @@ export const updateAuction = asyncHandler(async (req, res) => {
     if (invalidFields.length > 0) throw new ApiError(
         `Invalid field(s): ${invalidFields.join(", ")}`,
         400,
-        "VALIDATION_ERROR"
+        "INVALID_FIELDS"
     );
 
     const { extendByHours } = req.body;
+    if (!extendByHours) throw new ApiError('extendByHours not found', 400, 'EXTENSION_HRS_MISSING')
     const parsedExtendByHours = Number(extendByHours);
     const { id } = req.params;  
 
@@ -155,6 +156,9 @@ export const updateAuction = asyncHandler(async (req, res) => {
 
         auction = auctionRows[0];
     } catch (err) {
+        if (err.cause?.code === "22P02") {
+            throw new ApiError("invalid auction ID", 400, "INVALID_AUCTION_ID");
+        }
         console.error("DB ERROR:", err);
         throw new ApiError(err.message, 500, "DB_ERROR");
     }
@@ -211,12 +215,12 @@ export const updateAuction = asyncHandler(async (req, res) => {
 // delete auction by id
 export const deleteAuction = asyncHandler(async (req, res) => {
     const {id} = req.params;
-    if (!id) throw new ApiError("auction id not found", 400, "VALIDATION_ERROR")
+    if (!id) throw new ApiError("auction id not found", 400, "MISSING_AUCTION_ID")
 
 
     // check if the user requesting for deletion owns the auction
     const userId = req.user.id;
-    if (!userId) throw new ApiError('user id wasnt found in access token paylaod, get token on api/v1/auth/login', 401, 'UNAUTHORIZED');
+    if (!userId) throw new ApiError('host id wasnt found in access token paylaod, get token on api/v1/auth/login', 401, 'MISSING_HOST_ID');
 
     
     let auction;
@@ -229,6 +233,9 @@ export const deleteAuction = asyncHandler(async (req, res) => {
             
         auction = auctionRows[0]
     } catch (err) {
+        if (err.cause?.code === "22P02") {
+            throw new ApiError("invalid auction ID", 400, "INVALID_AUCTION_ID");
+        }
         console.error("DB ERROR:", err);
         throw new ApiError(err.message, 500, "DB_ERROR");
     }
