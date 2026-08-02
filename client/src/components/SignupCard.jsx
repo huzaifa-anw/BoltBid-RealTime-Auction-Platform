@@ -1,8 +1,73 @@
 import { Link } from 'react-router';
-import { useState } from 'react';
+import { use, useState } from 'react';
 
 export default function SignupCard() {
-    const [isError, setIsError] = useState(true);
+    // error states
+    const [isError, setIsError] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+
+    // form input state
+    const [form, setForm] = useState({
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+    });
+
+    const handleChange = (e) => {
+        const {name, value} = e.target;
+        setForm(prev => (
+            {
+                ...prev,
+                [name]: value
+            }   
+        ))
+    }
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        // VALIDATE DATA
+        if (!form.firstName.trim()) {
+            setIsError(true);
+            setErrorMessage("First Name is required")
+        }
+
+        if (!form.lastName.trim()) {
+            setIsError(true);
+            setErrorMessage("Last Name is required")
+        }
+
+        if (!form.email.trim()) {
+            setIsError(true);
+            setErrorMessage("Email is required")
+        }
+
+        if (!form.password) {
+            setIsError(true);
+            setErrorMessage("Password is required")
+        }
+        
+        if (!form.confirmPassword) {
+            setIsError(true);
+            setErrorMessage("Password is required")
+        }
+
+        if (form.password !== form.confirmPassword){
+            setIsError(true);
+            setErrorMessage('Passwords don\'t match')
+        }
+
+        if(!emailRegex.test(form.email.trim())) {
+            setIsError(true);
+            setErrorMessage('Invalid email format')
+        }
+        // MAKE API CALL (TRY CATCH)
+    }
+
     return (
         <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-7xl items-center justify-center px-4 py-10 sm:px-6 lg:px-8">
             <div className="grid w-full gap-8 overflow-hidden rounded-[2rem] border border-slate-700/80 shadow-2xl shadow-slate-950/15 lg:grid-cols-[1.1fr_1.9fr]">
@@ -39,21 +104,27 @@ export default function SignupCard() {
                             </p>
                         </div>
 
-                        <form className="space-y-4 rounded-3xl bg-white p-6 ring-1 ring-slate-200">
+                        <form onSubmit={handleSubmit} className="space-y-4 rounded-3xl bg-white p-6 ring-1 ring-slate-200">
+
                             {/* Error Message */}
                             {
                                 isError
                                 &&
                                 (<div className="min-h-[1.5rem] rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                                    <span className="block">Please correct the highlighted fields before continuing.</span>
+                                    <span className="block">{errorMessage}</span>
                                 </div>)
                             }
                             {/* Error Message */}
+
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <label className="block text-sm text-slate-950">
                                     <span className="mb-2 block text-xs uppercase tracking-[0.24em] text-slate-500">First name</span>
                                     <input
                                         type="text"
+                                        name='firstName'
+                                        value={form.firstName}
+                                        onChange={handleChange}
+                                        // required
                                         placeholder="John"
                                         className="mt-1 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/20"
                                     />
@@ -62,6 +133,10 @@ export default function SignupCard() {
                                     <span className="mb-2 block text-xs uppercase tracking-[0.24em] text-slate-500">Last name</span>
                                     <input
                                         type="text"
+                                        name='lastName'
+                                        value={form.lastName}
+                                        onChange={handleChange}
+                                        // required
                                         placeholder="Doe"
                                         className="mt-1 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/20"
                                     />
@@ -72,6 +147,10 @@ export default function SignupCard() {
                                 <span className="mb-2 block text-xs uppercase tracking-[0.24em] text-slate-500">Email</span>
                                 <input
                                     type="email"
+                                    name="email"
+                                    value={form.email}
+                                    onChange={handleChange}
+                                    // required
                                     placeholder="you@example.com"
                                     className="mt-1 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/20"
                                 />
@@ -82,6 +161,10 @@ export default function SignupCard() {
                                     <span className="mb-2 block text-xs uppercase tracking-[0.24em] text-slate-500">Password</span>
                                     <input
                                         type="password"
+                                        name="password"
+                                        value={form.password}
+                                        onChange={handleChange}
+                                        // required
                                         placeholder="Enter a strong password"
                                         className="mt-1 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/20"
                                     />
@@ -90,6 +173,10 @@ export default function SignupCard() {
                                     <span className="mb-2 block text-xs uppercase tracking-[0.24em] text-slate-500">Confirm password</span>
                                     <input
                                         type="password"
+                                        name='confirmPassword'
+                                        value={form.confirmPassword}
+                                        onChange={handleChange}
+                                        // required
                                         placeholder="Confirm password"
                                         className="mt-1 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/20"
                                     />

@@ -77,6 +77,20 @@ Content-Type: application/json
 
 ---
 
+### Invalid Email Format
+
+**Status Code:** `400 Bad Request`
+
+```json
+{
+  "success": false,
+  "message": "Invalid email format",
+  "errorCode": "INVALID_EMAIL_FORMAT"
+}
+```
+
+---
+
 ### Email Already Exists
 
 **Status Code:** `409 Conflict`

@@ -15,7 +15,12 @@ export const signupUser = asyncHandler(async (req, res) => {
         throw new ApiError("All fields are required (name, email, password)", 400, "VALIDATION_ERROR");
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const sanitizedEmail = email.toLowerCase().trim();
+
+    if (!emailRegex.test(sanitizedEmail)) {
+        throw new ApiError("Invalid email format", 400, "INVALID_EMAIL_FORMAT");
+    }
 
     let existingUser;
 
