@@ -46,12 +46,7 @@ export default function SignupCard() {
             setErrorMessage("Email is required")
         }
 
-        if (!form.password) {
-            setIsError(true);
-            setErrorMessage("Password is required")
-        }
-        
-        if (!form.confirmPassword) {
+        if (!form.password || !form.confirmPassword) {
             setIsError(true);
             setErrorMessage("Password is required")
         }
@@ -65,6 +60,7 @@ export default function SignupCard() {
             setIsError(true);
             setErrorMessage('Invalid email format')
         }
+
         // MAKE API CALL (TRY CATCH)
     }
 
