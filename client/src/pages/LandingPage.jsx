@@ -188,7 +188,7 @@ export default function Landing() {
                                 </div>
 
                                 <div className="bg-green-500/20 text-green-300 px-3 py-2 rounded-xl h-fit animate-pulse">
-                                    LIVE
+                                    &#x2B58; LIVE
                                 </div>
 
                             </div>
