@@ -90,13 +90,15 @@ export default function SignupCard() {
                     password: form.password,
                 }
             );
+
             console.dir(response);
-                if (response.data.success) {
-                    localStorage.setItem('token', response.data.accessToken);
-                    setIsSuccess(true);
-                    setSuccessMessage('Account created successfully');
-                    navigate("/home")
-                } 
+
+            if (response.data.success) {
+                localStorage.setItem('token', response.data.data.accessToken);
+                setIsSuccess(true);
+                setSuccessMessage('Account created successfully');
+                navigate("/home")
+            } 
             else {
                 setIsError(true);
                 setErrorMessage(response.data.message || 'Signup failed');
