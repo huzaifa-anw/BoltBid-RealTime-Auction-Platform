@@ -1,10 +1,14 @@
-import { Link } from 'react-router';
-import { use, useState } from 'react';
+import { Link, useNavigate } from 'react-router';
+import { useState } from 'react';
+import axios from 'axios';
 
 export default function SignupCard() {
-    // error states
+    // error / success / loading states
     const [isError, setIsError] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
+    const [isSuccess, setIsSuccess] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     // form input state
     const [form, setForm] = useState({
@@ -14,6 +18,8 @@ export default function SignupCard() {
         password: "",
         confirmPassword: "",
     });
+
+    let navigate = useNavigate();
 
     const handleChange = (e) => {
         const {name, value} = e.target;
@@ -25,43 +31,101 @@ export default function SignupCard() {
         ))
     }
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        if (isLoading) return;
+
+        setIsError(false);
+        setErrorMessage('');
+        setIsSuccess(false);
+        setSuccessMessage('');
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
         // VALIDATE DATA
         if (!form.firstName.trim()) {
             setIsError(true);
-            setErrorMessage("First Name is required")
+            setErrorMessage("First Name is required");
+            return;
         }
 
         if (!form.lastName.trim()) {
             setIsError(true);
-            setErrorMessage("Last Name is required")
+            setErrorMessage("Last Name is required");
+            return;
         }
 
         if (!form.email.trim()) {
             setIsError(true);
-            setErrorMessage("Email is required")
+            setErrorMessage("Email is required");
+            return;
         }
 
         if (!form.password || !form.confirmPassword) {
             setIsError(true);
-            setErrorMessage("Password is required")
+            setErrorMessage("Password is required");
+            return;
         }
 
         if (form.password !== form.confirmPassword){
             setIsError(true);
-            setErrorMessage('Passwords don\'t match')
+            setErrorMessage('Passwords don\'t match');
+            return;
         }
 
         if(!emailRegex.test(form.email.trim())) {
             setIsError(true);
-            setErrorMessage('Invalid email format')
+            setErrorMessage('Invalid email format');
+            return;
         }
 
-        // MAKE API CALL (TRY CATCH)
+        setIsLoading(true);
+
+        try {
+            const response = await axios.post(
+                "http://localhost:3000/api/v1/auth/signup",
+                {
+                    name: `${form.firstName} ${form.lastName}`,
+                    email: form.email,
+                    password: form.password,
+                }
+            );
+            console.dir(response);
+                if (response.data.success) {
+                    localStorage.setItem('token', response.data.accessToken);
+                    setIsSuccess(true);
+                    setSuccessMessage('Account created successfully');
+                    navigate("/home")
+                } 
+            else {
+                setIsError(true);
+                setErrorMessage(response.data.message || 'Signup failed');
+            }
+        } catch (e) {
+            console.log("an error occured");
+            console.dir(e);
+            setIsError(true);
+            if (e.response) {
+                const data = e.response.data;
+                
+                if (data.errorCode === "VALIDATION_ERROR") {
+                    setErrorMessage("All fields are required");
+                }
+                else if (data.errorCode === "INVALID_EMAIL_FORMAT") {
+                    setErrorMessage("Please enter a valid email address")
+                }
+                else if (data.errorCode === "USER_EXISTS") {
+                    setErrorMessage("Account already exists, Please Log In")
+                }
+                else if (data.errorCode === "DB_DOWN") {
+                    setErrorMessage("Database is currently unavailable, Please wait before trying again")
+                }
+                return;
+            }
+            setErrorMessage('An error occurred while signing up');
+        } finally {
+            setIsLoading(false);
+        }
     }
 
     return (
@@ -181,9 +245,10 @@ export default function SignupCard() {
 
                             <button
                                 type="submit"
-                                className="w-full rounded-2xl bg-cyan-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
+                                disabled={isLoading}
+                                className="w-full rounded-2xl bg-cyan-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-70"
                             >
-                                Sign up
+                                {isLoading ? 'Creating account...' : 'Sign up'}
                             </button>
                         </form>
 

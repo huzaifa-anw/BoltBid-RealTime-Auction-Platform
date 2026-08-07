@@ -9,6 +9,8 @@ import logger from './middlewares/logger.middleware.js'
 import errorHandler from './middlewares/errorHandler.middleware.js'
 import auctionSocketSetup from './sockets/auction.socket.js';
 import cors from 'cors';
+import { db } from './db/db.js';
+import { sql } from "drizzle-orm";
 import sweeper from './utils/sweeper.js';
 
 const app = express();
@@ -24,7 +26,7 @@ auctionSocketSetup(io);
 const PORT = process.env.PORT || 5000;
 
 const corsOptions = {
-    origin: 'http://127.0.0.1:5500',
+    origin: 'http://localhost:5173',
     optionsSuccessStatus: 200,
 }
 

@@ -67,7 +67,15 @@ export const signupUser = asyncHandler(async (req, res) => {
         email: dbResponse[0].email
     };
 
-    const response = new ApiResponse(true, 201, "User created successfully", {user: safeUser})
+    const payload = safeUser;
+
+    const accessToken = jwt.sign(
+        payload,
+        process.env.ACCESS_TOKEN_SECRET,
+        { expiresIn: "24h" }
+    );
+
+    const response = new ApiResponse(true, 201, "User created successfully", {user: safeUser, accessToken})
 
     return res.status(response.statusCode).json(response);
 });

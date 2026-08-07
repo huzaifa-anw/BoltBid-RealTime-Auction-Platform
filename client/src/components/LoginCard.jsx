@@ -2,15 +2,18 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 
 export default function LoginCard() {
-    // error states
+    // error / success / loading states
     const [isError, setIsError] = useState(false);
-    const [errorMessage, setErrorMessage] = useState('')
+    const [errorMessage, setErrorMessage] = useState('');
+    const [isSuccess, setIsSuccess] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     // form input state
     const [form, setForm] = useState({
         email: "",
         password: "",
-    })
+    });
 
     const handleChange = (e) => {
         const {name, value} = e.target;
@@ -22,22 +25,36 @@ export default function LoginCard() {
         ))
     }
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        if (isLoading) return;
 
-        // Validate data
+        setIsError(false);
+        setErrorMessage('');
+        setIsSuccess(false);
+        setSuccessMessage('');
 
         if (!form.email.trim()) {
             setIsError(true);
-            setErrorMessage("Email is required")
+            setErrorMessage("Email is required");
+            return;
         }
 
         if (!form.password) {
             setIsError(true);
-            setErrorMessage("Password is required")
+            setErrorMessage("Password is required");
+            return;
         }
 
-        // api call
+        setIsLoading(true);
+
+        try {
+            // TODO: replace with actual login API call
+            setIsSuccess(true);
+            setSuccessMessage('Login successful');
+        } finally {
+            setIsLoading(false);
+        }
     }
 
     return (
@@ -77,6 +94,11 @@ export default function LoginCard() {
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-4 rounded-3xl bg-white p-6 ring-1 ring-slate-200">
+                            {isSuccess && (
+                                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                                    {successMessage}
+                                </div>
+                            )}
                             {isError && (
                                 <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                                     {errorMessage}
@@ -109,9 +131,10 @@ export default function LoginCard() {
 
                             <button
                                 type="submit"
-                                className="w-full rounded-2xl bg-cyan-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
+                                disabled={isLoading}
+                                className="w-full rounded-2xl bg-cyan-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-70"
                             >
-                                Log In
+                                {isLoading ? 'Signing in...' : 'Log In'}
                             </button>
                         </form>
 
