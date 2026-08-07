@@ -1,12 +1,18 @@
 import { useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
+import axios from 'axios';
 
 export default function LoginCard() {
-    // error / success / loading states
+
+    // error states
     const [isError, setIsError] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
+
+    // success states
     const [isSuccess, setIsSuccess] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
+
+    // error state
     const [isLoading, setIsLoading] = useState(false);
 
     // form input state
@@ -14,6 +20,8 @@ export default function LoginCard() {
         email: "",
         password: "",
     });
+
+    let navigate = useNavigate();
 
     const handleChange = (e) => {
         const {name, value} = e.target;
@@ -49,9 +57,47 @@ export default function LoginCard() {
         setIsLoading(true);
 
         try {
-            // TODO: replace with actual login API call
-            setIsSuccess(true);
-            setSuccessMessage('Login successful');
+            const response = await axios.post(
+                "http://localhost:3000/api/v1/auth/login",
+                {
+                    email: form.email,
+                    password: form.password,
+                }
+            );
+
+            console.dir(response);
+
+            if (response.data.success) {
+                localStorage.setItem('token', response.data.data.accessToken);
+                setIsSuccess(true);
+                setSuccessMessage('Logged in successfully');
+                navigate("/home")
+            } 
+            else {
+                setIsError(true);
+                setErrorMessage(response.data.message || 'Signup failed');
+            }
+        }
+        catch (e) {
+            console.log("an error occured");
+            console.dir(e);
+            setIsError(true);
+
+            if (e.response) {
+                const data = e.response.data;
+                
+                if (data.errorCode === "VALIDATION_ERROR") {
+                    setErrorMessage("All fields are required");
+                }
+                else if (data.errorCode === "USER_DOESNT_EXIST" || data.errorCode === "INCORRECT_PASSWORD") {
+                    setErrorMessage("Invalid email or password")
+                }
+                else if (data.errorCode === "DB_DOWN") {
+                    setErrorMessage("Database is currently unavailable, Please wait before trying again")
+                }
+                return;
+            }
+            setErrorMessage('An error occurred while signing up');
         } finally {
             setIsLoading(false);
         }
@@ -134,7 +180,7 @@ export default function LoginCard() {
                                 disabled={isLoading}
                                 className="w-full rounded-2xl bg-cyan-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-70"
                             >
-                                {isLoading ? 'Signing in...' : 'Log In'}
+                                {isLoading ? 'Logging in...' : 'Log In'}
                             </button>
                         </form>
 

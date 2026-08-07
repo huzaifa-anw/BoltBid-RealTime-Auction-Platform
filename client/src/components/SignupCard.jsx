@@ -3,11 +3,16 @@ import { useState } from 'react';
 import axios from 'axios';
 
 export default function SignupCard() {
-    // error / success / loading states
+
+    // error states
     const [isError, setIsError] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
+
+    // success states
     const [isSuccess, setIsSuccess] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
+
+    // error state
     const [isLoading, setIsLoading] = useState(false);
 
     // form input state
