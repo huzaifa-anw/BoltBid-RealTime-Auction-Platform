@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from 'react-router';
 import Sidebar from "../components/Sidebar";
 import AuctionCard from "../components/AuctionCard";
 import axios from "axios"
@@ -35,6 +36,8 @@ const sampleAuctions = [
 
 export default function HomePage() {
 
+    let navigate = useNavigate();
+
     // STATES
 
     const [activeView, setActiveView] = useState("browse");
@@ -56,17 +59,91 @@ export default function HomePage() {
         durationHours: '',
         imageUrl: '',
     });
+    const [newAuctionFormError, setNewAuctionFormError] = useState('');
 
     const handleNewAuctionChange = (e) => {
         const { name, value } = e.target;
         setNewAuction((prev) => ({ ...prev, [name]: value }));
+
+        if (newAuctionFormError) {
+            setNewAuctionFormError('');
+        }
     };
 
     const handleCreateAuction = async (e) => {
         e.preventDefault();
-        // TODO: wire this to create auction API
-        console.log('Creating auction:', newAuction);
-        setNewAuction({ title: '', description: '', startingPrice: '', durationHours: '' });
+
+        const trimmedTitle = newAuction.title.trim();
+        const trimmedDescription = newAuction.description.trim();
+        const trimmedImageUrl = newAuction.imageUrl.trim();
+        const parsedStartingPrice = Number(newAuction.startingPrice);
+        const parsedDurationHours = Number(newAuction.durationHours);
+
+        if (!trimmedTitle || !trimmedDescription || !trimmedImageUrl || newAuction.startingPrice === '' || newAuction.durationHours === '') {
+            setNewAuctionFormError('all fields are required, (Title, Description, Starting Price, Image URL, Duration)');
+            return;
+        }
+
+        if (trimmedTitle.length > 254) {
+            setNewAuctionFormError('title should be between 1-254 characters');
+            return;
+        }
+
+        if (trimmedDescription.length > 254) {
+            setNewAuctionFormError('description should be between 1-254 characters');
+            return;
+        }
+
+        if (!Number.isFinite(parsedStartingPrice) || !Number.isInteger(parsedStartingPrice) || parsedStartingPrice <= 0) {
+            setNewAuctionFormError('starting price must be a positive whole number');
+            return;
+        }
+
+        if (!Number.isFinite(parsedDurationHours) || !Number.isInteger(parsedDurationHours) || parsedDurationHours <= 0) {
+            setNewAuctionFormError('endsAtDurationInHrs must be a positive whole number');
+            return;
+        }
+
+        if (parsedDurationHours < 1) {
+            setNewAuctionFormError('auction must run for at least 1 hour');
+            return;
+        }
+
+        if (parsedDurationHours > 24 * 10) {
+            setNewAuctionFormError('auction cannot run longer than 10 days');
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.post(
+                'http://localhost:3000/api/v1/auctions',
+                {
+                    title: trimmedTitle,
+                    description: trimmedDescription,
+                    startingPrice: parsedStartingPrice,
+                    imageURL: trimmedImageUrl,
+                    endsAtDurationInHrs: parsedDurationHours,
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            if (response.data.success) {
+                setNewAuction({ title: '', description: '', startingPrice: '', durationHours: '', imageUrl: '' });
+                setNewAuctionFormError('');
+                setAuctionsError(false);
+                setAuctionsErrorMessage('');
+                setActiveView('browse');
+                getAuctions();
+            }
+        } catch (error) {
+            const errorMessage = error.response?.data?.message || 'Unable to create auction at the moment';
+            setNewAuctionFormError(errorMessage);
+        }
     };
 
     // API CALL FUNCTIONS
@@ -97,6 +174,7 @@ export default function HomePage() {
                 }
             })
             if (response.data.success) {
+                console.dir(response);
                 const auctionsArray = response.data.data.auctions;
 
                 if (auctionsArray.length > 0) {
@@ -122,12 +200,17 @@ export default function HomePage() {
         getAuctions()
     }, [])
 
+    const handleLogout = (e) => {
+        localStorage.removeItem("token");
+        navigate("/");
+    }
+
     return (
         <div className="min-h-screen bg-[#111827] text-[#F9FAFB]">
             <div className="flex flex-col lg:flex-row">
-                <Sidebar userName={profile.name || "Guest User"} profileError={profileError} activeView={activeView} setActiveView={setActiveView} />
+                <Sidebar userName={profile.name || "Guest User"} profileError={profileError} activeView={activeView} setActiveView={setActiveView} handleLogout={handleLogout} />
 
-                <main className="flex-1 p-6 lg:p-8">
+                <main className="flex-1 p-6 lg:p-8 min-w-0">
                     <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                         <div>
                             <p className="text-sm uppercase tracking-[0.25em] text-[#22D3EE]">Dashboard</p>
@@ -147,8 +230,15 @@ export default function HomePage() {
                                 {auctionsError ?
                                     <p className="mt-2 text-lg text-red-400">{auctionsErrorMessage}</p>
                                     :
-                                    sampleAuctions.map((auction) => (
-                                        <AuctionCard key={auction.title} {...auction} />
+                                    auctions.map((auction) => (
+                                        <AuctionCard 
+                                            key={auction.id}
+                                            title={auction.title} 
+                                            description={auction.description}
+                                            highestBid={auction.highest_bid} 
+                                            imageURL={auction.image_url}
+                                            endsAt={auction.ends_at}
+                                        />
                                     ))
                                 }
                             </section>
@@ -223,6 +313,12 @@ export default function HomePage() {
                                             placeholder="How many hours until auction ends"
                                         />
                                     </label>
+
+                                    {newAuctionFormError && (
+                                        <p className="rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+                                            {newAuctionFormError}
+                                        </p>
+                                    )}
 
                                     <button
                                         type="submit"

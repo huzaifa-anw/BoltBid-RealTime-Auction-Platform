@@ -6,7 +6,7 @@ const navItems = [
   { id: "logout", label: "Logout", icon: <FaSignOutAlt /> },
 ];
 
-export default function Sidebar({ userName, profileError, activeView, setActiveView}) {
+export default function Sidebar({ userName, profileError, activeView, setActiveView, handleLogout}) {
   const initials = (userName || "Guest User")
     .split(" ")
     .filter(Boolean)
@@ -35,7 +35,14 @@ export default function Sidebar({ userName, profileError, activeView, setActiveV
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveView(item.id)}
+                onClick={() => {
+                    if (item.id === "logout") {
+                        handleLogout();
+                        return;
+                    }
+
+                    setActiveView(item.id);
+                }}
                 className={`flex items-center gap-3 rounded-2xl border px-4 py-3 text-left text-sm font-medium transition ${
                   isActive
                     ? "border-[#22D3EE] bg-[#22D3EE]/15 text-[#22D3EE]"
