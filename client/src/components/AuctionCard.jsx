@@ -1,6 +1,6 @@
-import { FaClock, FaGavel, FaUserCircle } from "react-icons/fa";
+import { FaClock, FaGavel, FaUserCircle, FaEdit } from "react-icons/fa";
 
-export default function AuctionCard({ title, staringPrice, endsAt, highestBid, description, imageURL }) {
+export default function AuctionCard({ id, title, staringPrice, endsAt, highestBid, description, imageURL, hostId, profileId, handleDelete, handleOpenUpdateModal }) {
 
     function getTimeRemaining(endsAt) {
         const difference = new Date(endsAt) - new Date();
@@ -22,6 +22,7 @@ export default function AuctionCard({ title, staringPrice, endsAt, highestBid, d
     }
 
     const timeStr = getTimeRemaining(endsAt);
+    const isHost = hostId && profileId && hostId === profileId;
 
     return (
         <article className="overflow-hidden rounded-3xl border border-white/10 bg-[#1F2937] shadow-[0_10px_40px_rgba(0,0,0,0.25)] transition hover:-translate-y-1 hover:border-[#22D3EE]/40">
@@ -47,10 +48,21 @@ export default function AuctionCard({ title, staringPrice, endsAt, highestBid, d
                     </div>
                 </div>
 
-                <div className="mt-5 flex justify-end">
-                    <button className="flex items-center gap-2 rounded-xl bg-[#22D3EE] px-3 py-2 font-medium text-[#111827] transition hover:opacity-90">
-                        <FaGavel /> Bid Now
-                    </button>
+                <div className="mt-5 flex flex-wrap items-center justify-end gap-3">
+                    {isHost ? (
+                        <>
+                            <button onClick={() => handleOpenUpdateModal(id)} className="flex items-center gap-2 rounded-xl border border-[#22D3EE] bg-transparent px-3 py-2 text-sm font-medium text-[#22D3EE] transition hover:bg-[#22D3EE]/10">
+                                <FaEdit /> Update
+                            </button>
+                            <button onClick={() => handleDelete(id)} className="rounded-xl bg-red-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-600">
+                                Delete
+                            </button>
+                        </>
+                    ) : (
+                        <button className="flex items-center gap-2 rounded-xl bg-[#22D3EE] px-3 py-2 text-sm font-medium text-[#111827] transition hover:opacity-90">
+                            <FaGavel /> Bid Now
+                        </button>
+                    )}
                 </div>
             </div>
         </article>

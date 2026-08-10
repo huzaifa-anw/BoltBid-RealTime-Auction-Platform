@@ -4,36 +4,6 @@ import Sidebar from "../components/Sidebar";
 import AuctionCard from "../components/AuctionCard";
 import axios from "axios"
 
-const sampleAuctions = [
-    {
-        title: "MacBook Pro M3",
-        price: "1240",
-        bidder: "Huzaifa",
-        endsIn: "00:18:12",
-        category: "Electronics",
-        description: "Lightly used laptop with a stunning Retina display and all-day battery life.",
-        image: "/boltbid.webp",
-    },
-    {
-        title: "Vintage Rolex",
-        price: "8600",
-        bidder: "Amina",
-        endsIn: "01:02:40",
-        category: "Watches",
-        description: "Elegant chronograph with a polished steel case and premium leather strap.",
-        image: "/boltbid.webp",
-    },
-    {
-        title: "Gaming Chair Pro",
-        price: "320",
-        bidder: "Nadia",
-        endsIn: "00:44:05",
-        category: "Furniture",
-        description: "Ergonomic gaming chair with lumbar support and premium reclining features.",
-        image: "/boltbid.webp",
-    },
-];
-
 export default function HomePage() {
 
     let navigate = useNavigate();
@@ -50,6 +20,12 @@ export default function HomePage() {
     const [auctions, setAuctions] = useState([]);
     const [auctionsError, setAuctionsError] = useState(false);
     const [auctionsErrorMessage, setAuctionsErrorMessage] = useState('')
+
+    // update modal state
+    const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+    const [selectedAuctionId, setSelectedAuctionId] = useState(null);
+    const [extensionHours, setExtensionHours] = useState('');
+    const [updateError, setUpdateError] = useState('');
 
     // create auction form state
     const [newAuction, setNewAuction] = useState({
@@ -156,6 +132,7 @@ export default function HomePage() {
                 }
             })
             if (response.data.success) {
+                console.log(response.data.data)
                 setProfile(response.data.data)
             }
         } catch (e) {
@@ -174,8 +151,8 @@ export default function HomePage() {
                 }
             })
             if (response.data.success) {
-                console.dir(response);
                 const auctionsArray = response.data.data.auctions;
+                console.dir(auctionsArray)
 
                 if (auctionsArray.length > 0) {
                     setAuctions(auctionsArray)
@@ -200,6 +177,69 @@ export default function HomePage() {
         getAuctions()
     }, [])
 
+    const handleDelete = async (id) => {
+        try {
+            const token = localStorage.getItem("token");
+            const response = await axios.delete(`http://localhost:3000/api/v1/auctions/${id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                }
+            });
+            console.dir(response);
+            setAuctions(prev => prev.filter(auction => auction.id !== id));
+        } catch (e) {
+            console.log("an error occured");
+            console.error(e);
+            alert('Could not delete auction, check console for details')
+        }
+    }
+
+    const openUpdateModal = (id) => {
+        setSelectedAuctionId(id);
+        setExtensionHours('');
+        setUpdateError('');
+        setIsUpdateModalOpen(true);
+    };
+
+    const closeUpdateModal = () => {
+        setIsUpdateModalOpen(false);
+        setSelectedAuctionId(null);
+        setExtensionHours('');
+        setUpdateError('');
+    };
+
+    const handleUpdateModalSubmit = async (e) => {
+        e.preventDefault();
+
+        const parsedHours = Number(extensionHours);
+
+        if (!Number.isFinite(parsedHours) || !Number.isInteger(parsedHours) || parsedHours <= 0) {
+            setUpdateError('Please enter a positive whole number of hours.');
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem("token");
+            const response = await axios.patch(
+                `http://localhost:3000/api/v1/auctions/${selectedAuctionId}`,
+                { extendByHours: parsedHours },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    }
+                }
+            );
+
+            if (response.data.success) {
+                closeUpdateModal();
+                getAuctions();
+            }
+        } catch (e) {
+            const errorMessage = e.response?.data?.message || 'Unable to extend auction at the moment.';
+            setUpdateError(errorMessage);
+        }
+    }
+
     const handleLogout = (e) => {
         localStorage.removeItem("token");
         navigate("/");
@@ -220,7 +260,7 @@ export default function HomePage() {
                         </div>
                         <img src="/boltbid.webp" alt="BoltBid logo" className="h-16 w-auto" />
                         <div className="rounded-2xl border border-[#22D3EE]/20 bg-[#1F2937] px-4 py-3 text-sm text-slate-300">
-                            <span className="font-medium text-[#22D3EE]">{sampleAuctions.length}</span> live listings available
+                            <span className="font-medium text-[#22D3EE]">{auctions.length}</span> live listings available
                         </div>
                     </div>
 
@@ -233,15 +273,64 @@ export default function HomePage() {
                                     auctions.map((auction) => (
                                         <AuctionCard 
                                             key={auction.id}
+                                            id={auction.id}
                                             title={auction.title} 
                                             description={auction.description}
                                             highestBid={auction.highest_bid} 
                                             imageURL={auction.image_url}
                                             endsAt={auction.ends_at}
+                                            hostId={auction.host_id}
+                                            profileId={profile.id}
+                                            handleDelete={handleDelete}
+                                            handleOpenUpdateModal={openUpdateModal}
                                         />
                                     ))
                                 }
                             </section>
+                        )}
+
+                        {isUpdateModalOpen && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
+                                <div className="w-full max-w-md rounded-3xl bg-[#111827] p-6 shadow-[0_0_40px_rgba(0,0,0,0.35)]">
+                                    <div className="mb-4 flex items-center justify-between">
+                                        <div>
+                                            <h2 className="text-xl font-semibold text-[#F9FAFB]">Extend auction duration</h2>
+                                            <p className="text-sm text-slate-400">Enter the number of hours to extend this auction.</p>
+                                        </div>
+                                        <button onClick={closeUpdateModal} className="rounded-full border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800">
+                                            Close
+                                        </button>
+                                    </div>
+                                    <form onSubmit={handleUpdateModalSubmit} className="space-y-4">
+                                        <label className="block text-sm font-medium text-slate-300">
+                                            Extension hours
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                value={extensionHours}
+                                                onChange={(e) => { setExtensionHours(e.target.value); if (updateError) setUpdateError(''); }}
+                                                className="mt-2 w-full rounded-2xl border border-slate-700 bg-[#1F2937] px-4 py-3 text-white outline-none transition focus:border-[#22D3EE]"
+                                                placeholder="Enter hours to extend"
+                                            />
+                                        </label>
+
+                                        {updateError && (
+                                            <p className="rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+                                                {updateError}
+                                            </p>
+                                        )}
+
+                                        <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                                            <button type="button" onClick={closeUpdateModal} className="rounded-2xl border border-slate-700 px-4 py-3 text-sm text-slate-200 transition hover:bg-slate-800">
+                                                Cancel
+                                            </button>
+                                            <button type="submit" className="rounded-2xl bg-[#22D3EE] px-4 py-3 text-sm font-semibold text-[#0F172A] transition hover:bg-[#38bdf8]">
+                                                Extend auction
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
                         )}
 
                         {activeView === 'create' && (
