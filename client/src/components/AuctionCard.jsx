@@ -1,6 +1,6 @@
 import { FaClock, FaGavel, FaUserCircle, FaEdit } from "react-icons/fa";
 
-export default function AuctionCard({ id, title, staringPrice, endsAt, highestBid, description, imageURL, hostId, profileId, handleDelete, handleOpenUpdateModal }) {
+export default function AuctionCard({ id, title, staringPrice, endsAt, highestBid, description, imageURL, hostId, profileId, handleDelete, handleOpenUpdateModal, onClick }) {
 
     function getTimeRemaining(endsAt) {
         const difference = new Date(endsAt) - new Date();
@@ -59,7 +59,7 @@ export default function AuctionCard({ id, title, staringPrice, endsAt, highestBi
                             </button>
                         </>
                     ) : (
-                        <button className="flex items-center gap-2 rounded-xl bg-[#22D3EE] px-3 py-2 text-sm font-medium text-[#111827] transition hover:opacity-90">
+                        <button onClick={onClick} className="flex items-center gap-2 rounded-xl bg-[#22D3EE] px-3 py-2 text-sm font-medium text-[#111827] transition hover:opacity-90">
                             <FaGavel /> Bid Now
                         </button>
                     )}

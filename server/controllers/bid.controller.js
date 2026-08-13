@@ -3,7 +3,7 @@ import { desc, eq } from "drizzle-orm";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import { db } from "../db/db.js";
-import { auctions, bids } from "../db/schema.js";
+import { auctions, bids, users } from "../db/schema.js";
 
 export const getAuctionBids = asyncHandler(async (req, res) => {
     const { id } = req.params;
@@ -30,10 +30,20 @@ export const getAuctionBids = asyncHandler(async (req, res) => {
 
     try {
         auctionBids = await db
-            .select()
-            .from(bids)
-            .where(eq(bids.auction_id, id))
-            .orderBy(desc(bids.created_at));
+        .select({
+            bidId: bids.id,
+            amount: bids.amount,
+            createdAt: bids.created_at,
+
+            bidder: {
+                id: users.id,
+                name: users.name,
+            },
+        })
+        .from(bids)
+        .innerJoin(users, eq(bids.bidder_id, users.id))
+        .where(eq(bids.auction_id, id))
+        .orderBy(desc(bids.created_at));
     } catch (err) {
         console.error("DB ERROR:", err);
         throw new ApiError(err.message, 500, "DB_ERROR");

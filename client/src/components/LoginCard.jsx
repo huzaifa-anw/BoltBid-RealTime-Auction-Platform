@@ -58,7 +58,7 @@ export default function LoginCard() {
 
         try {
             const response = await axios.post(
-                "http://localhost:3000/api/v1/auth/login",
+                `${import.meta.env.VITE_SERVER_URL}/api/v1/auth/login`,
                 {
                     email: form.email,
                     password: form.password,

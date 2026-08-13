@@ -1,8 +1,8 @@
 import asyncHandler from "express-async-handler";
-import { eq, gt, and } from "drizzle-orm";
+import { eq, gt, and, getTableColumns } from "drizzle-orm";
 import ApiError from '../utils/ApiError.js'
 import { db } from "../db/db.js";
-import { auctions } from "../db/schema.js";
+import { auctions, users } from "../db/schema.js";
 import ApiResponse from "../utils/ApiResponse.js";
 
 export const createAuction = asyncHandler(async (req, res) => {
@@ -99,11 +99,15 @@ export const getAuction = asyncHandler(async (req, res) => {
 
     try {
         const auctionRows = await db
-            .select()
+            .select({
+                ...getTableColumns(auctions),
+                host_name: users.name,
+            })
             .from(auctions)
-            .where(
-                eq(auctions.id, id),
-            );
+            .leftJoin(users, eq(auctions.host_id, users.id))
+            .where(eq(auctions.id, id)
+        );
+
         auctionRecord = auctionRows[0];
     } catch (err) {
         if (err.cause?.code === '22P02') throw new ApiError('invalid auction ID', 400, 'INVALID_AUCTION_ID')

@@ -93,7 +93,7 @@ export default function HomePage() {
         try {
             const token = localStorage.getItem('token');
             const response = await axios.post(
-                'http://localhost:3000/api/v1/auctions',
+                `${import.meta.env.VITE_SERVER_URL}/api/v1/auctions`,
                 {
                     title: trimmedTitle,
                     description: trimmedDescription,
@@ -126,7 +126,7 @@ export default function HomePage() {
     const getProfile = async () => {
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.get("http://localhost:3000/api/v1/users/me", {
+            const response = await axios.get(`${import.meta.env.VITE_SERVER_URL}/api/v1/users/me`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 }
@@ -145,7 +145,7 @@ export default function HomePage() {
     const getAuctions = async () => {
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.get("http://localhost:3000/api/v1/auctions", {
+            const response = await axios.get(`${import.meta.env.VITE_SERVER_URL}/api/v1/auctions`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 }
@@ -180,7 +180,7 @@ export default function HomePage() {
     const handleDelete = async (id) => {
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.delete(`http://localhost:3000/api/v1/auctions/${id}`, {
+            const response = await axios.delete(`${import.meta.env.VITE_SERVER_URL}/api/v1/auctions/${id}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 }
@@ -221,7 +221,7 @@ export default function HomePage() {
         try {
             const token = localStorage.getItem("token");
             const response = await axios.patch(
-                `http://localhost:3000/api/v1/auctions/${selectedAuctionId}`,
+                `${import.meta.env.VITE_SERVER_URL}/api/v1/auctions/${selectedAuctionId}`,
                 { extendByHours: parsedHours },
                 {
                     headers: {
@@ -283,6 +283,7 @@ export default function HomePage() {
                                             profileId={profile.id}
                                             handleDelete={handleDelete}
                                             handleOpenUpdateModal={openUpdateModal}
+                                            onClick={() => navigate(`/auction/${auction.id}`)}
                                         />
                                     ))
                                 }

@@ -4,6 +4,7 @@ import NotFound from './pages/NotFound';
 import Signup from './pages/Signup';
 import Login from './pages/Login';
 import HomePage from './pages/HomePage'
+import AuctionPage from "./pages/AuctionPage";
 
 export default function App() {
   return (
@@ -12,6 +13,7 @@ export default function App() {
         <Route path='signup' element={<Signup />} />
         <Route path='login' element={<Login />} />
         <Route path='home' element={<HomePage />} />
+        <Route path='auction/:id' element={<AuctionPage />} />
         <Route path='*' element={<NotFound />} />
     </Routes>
   );

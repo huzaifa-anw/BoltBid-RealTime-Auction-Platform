@@ -96,6 +96,8 @@ const handlePlaceBid = async (io, socket, data) => {
         io.in(`auction:${auctionId}`).emit('bid-placed', 
             {
                 bid: response,
+                bidderId,
+                bidderName: socket.user.name,
             }
         );
 

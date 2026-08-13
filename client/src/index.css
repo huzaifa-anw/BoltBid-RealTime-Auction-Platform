@@ -1,1 +1,14 @@
 @import "tailwindcss";
+
+:root {
+  font-family: "Inter", "Google Sans", sans-serif;
+}
+
+html, body, #root {
+  font-family: "Inter", "Google Sans", sans-serif;
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+}

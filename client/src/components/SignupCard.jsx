@@ -88,7 +88,7 @@ export default function SignupCard() {
 
         try {
             const response = await axios.post(
-                "http://localhost:3000/api/v1/auth/signup",
+                `${import.meta.env.VITE_SERVER_URL}/api/v1/auth/signup`,
                 {
                     name: `${form.firstName} ${form.lastName}`,
                     email: form.email,
