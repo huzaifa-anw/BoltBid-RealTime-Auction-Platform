@@ -14,7 +14,7 @@ export default function AuctionPage() {
     const [bidSuccess, setBidSuccess] = useState('');
     
     const [bids, setBids] = useState([]);
-    const [highestBid, setHighestBid] = useState('');
+    const [highestBid, setHighestBid] = useState(null);
     const [bidsError, setErrorBids] = useState(false);
 
     const getAuction = async () => {
@@ -45,7 +45,7 @@ export default function AuctionPage() {
                     Authorization: `Bearer ${token}`,
                 }
             })
-            console.dir(response);
+            // console.dir(response);
             if (response.data.success) {
                 console.log(response.data.data)
                 setBids(response.data.data.bids)
