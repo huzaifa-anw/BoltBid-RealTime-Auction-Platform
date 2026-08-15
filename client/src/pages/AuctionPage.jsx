@@ -1,9 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router";
+import { io } from "socket.io-client";
 import axios from 'axios'
 
 export default function AuctionPage() {
     let { id } = useParams();
+
+    const socketRef = useRef(null);
 
     // states
     const [auction, setAuction] = useState({});
@@ -25,16 +28,18 @@ export default function AuctionPage() {
                     Authorization: `Bearer ${token}`,
                 }
             })
-            console.dir(response);
             if (response.data.success) {
-                setAuction(response.data.data.auction)
-                setHighestBid(response.data.data.auction.highest_bid)
+                console.log('loggin auction (api)......');
+                console.dir(response.data.data.auction);
+                setAuction(response.data.data.auction);
+                setHighestBid(response.data.data.auction.highest_bid);
             }
         } catch (e) {
             console.log('----an error occurred ------')
             console.dir(e);
             setAuctionError('Unable to fetch auction at the moment');
         }
+
     }
 
     const getBids = async () => {
@@ -44,11 +49,19 @@ export default function AuctionPage() {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 }
-            })
-            // console.dir(response);
+            });
+            
             if (response.data.success) {
-                console.log(response.data.data)
-                setBids(response.data.data.bids)
+                const normalized = response.data.data.bids.map(b => ({
+                    id: b.bidId,
+                    amount: b.amount,
+                    bidderId: b.bidder.id,
+                    bidderName: b.bidder.name,
+                    createdAt: b.createdAt,
+                }));
+                console.log('loggin bids (api)......')
+                console.dir(normalized)
+                setBids(normalized);
             }
         } catch (e) {
             console.log('----an error occurred ------')
@@ -57,12 +70,45 @@ export default function AuctionPage() {
         }
     }
 
+    const initializeSocket = () => {
+        const token = localStorage.getItem('token');
+        socketRef.current = io(`${import.meta.env.VITE_WS_SERVER_URL}`, {
+        reconnectionDelayMax: 10000,
+        auth: {
+            token
+        },
+        });
+
+        socketRef.current.on('connect', () => {
+            socketRef.current.emit('join-auction', id)
+        })
+
+        socketRef.current.on('bid-placed', (data) => {
+            console.log(data)
+            setHighestBid(data.bid.amount);
+            console.log(typeof data.bid.amount)
+            setBids(prev => [{
+                id: data.bid.id,
+                amount: data.bid.amount,
+                bidderId: data.bidderId,
+                bidderName: data.bidderName,
+                createdAt: data.bid.createdAt,
+            }, ...prev]);
+        })
+
+        socketRef.current.on('place-bid-error', (data) => {
+            setBidError(data.message)   
+        })
+
+    }
+
 
     // useEffect
 
     useEffect(() => {
         getAuction();
         getBids();
+        initializeSocket();
     }, [])
 
     function handlePlaceBid(e) {
@@ -74,24 +120,16 @@ export default function AuctionPage() {
         setBidError('');
         setBidSuccess('');
 
-        if (!Number.isFinite(val) || val <= 0) {
+        if (!Number.isFinite(val) || val <= 0 || bidValue === '') {
             setBidError('Enter a valid numeric amount greater than 0.');
             return;
         }
 
-        if (val <= highestBid) {
-            setBidError(`Your bid must be greater than the current highest bid (${highestBid}).`);
-            return;
-        }
-
-        if (val <= auction.starting_price && highestBid === auction.starting_price) {
-            setBidError(`Your bid must be greater than the starting price (${auction.starting_price}).`);
-            return;
-        }
+        socketRef.current.emit('place-bid', {auctionId: id, amount: Number(bidValue)})
 
         setBidSuccess(`Bid placed: $${val} — (dummy action, no state change)`);
-        setBidValue('');
     }
+
 
     return (
         <div className="min-h-screen bg-[#111827] px-6 py-10 text-slate-50">
@@ -188,22 +226,18 @@ export default function AuctionPage() {
                             >
                                 <input
                                     type="number"
+                                    step="any"
                                     value={bidValue}
                                     onChange={(e) => setBidValue(e.target.value)}
-                                    step={
-                                        highestBid
-                                            ? highestBid + (highestBid * 0.01)
-                                            : auction.starting_price + (auction.starting_price * 0.01)
-                                    }
                                     placeholder={
                                         highestBid
-                                            ? `Enter > ${highestBid + (highestBid * 0.01)}`
-                                            : `Enter > ${auction.starting_price + (auction.starting_price * 0.01)}`
+                                            ? `Suggested: ${Math.trunc(highestBid + (highestBid * 0.01))}`
+                                            : `Suggested: ${Math.trunc(auction.starting_price + (auction.starting_price * 0.01))}`
                                     }
                                     min={
                                         highestBid
-                                            ? highestBid + (highestBid * 0.01)
-                                            : auction.starting_price + (auction.starting_price * 0.01)
+                                            ? Math.trunc(highestBid + (highestBid * 0.01))
+                                            : Math.trunc(auction.starting_price + (auction.starting_price * 0.01))
                                     }
                                     className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-4 text-lg outline-none transition focus:border-cyan-400"
                                 />
@@ -217,10 +251,10 @@ export default function AuctionPage() {
                             </form>
 
                             <p className="mt-4 text-sm text-slate-400">
-                                Minimum allowed: $
+                                Minimum reccommemded: $
                                 {highestBid
-                                    ? highestBid + (highestBid * 0.01)
-                                    : auction.starting_price + (auction.starting_price * 0.01)
+                                    ? Math.trunc(highestBid + (highestBid * 0.01))
+                                    : Math.trunc(auction.starting_price + (auction.starting_price * 0.01))
                                 }
                             </p>
 
@@ -245,24 +279,18 @@ export default function AuctionPage() {
 
                         <div className="mt-6 border-l border-cyan-400/20 pl-6">
                             {bids.length > 0 ? bids.map((bid) => (
-                                    <div key={bid.id} className="mb-8 last:mb-0">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <p className="font-bold">
-                                                    {bid.name}
-                                                </p>
-
-                                                <p className="text-sm text-slate-500">
-                                                    {bid.time}
-                                                </p>
-                                            </div>
-
-                                            <p className="text-xl text-cyan-400">
-                                                ${bid.amount}
+                                <div key={bid.id} className="mb-8 last:mb-0">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="font-bold">{bid.bidderName}</p>
+                                            <p className="text-sm text-slate-500">
+                                                {new Date(bid.createdAt).toLocaleTimeString()}
                                             </p>
                                         </div>
+                                        <p className="text-xl text-cyan-400">${bid.amount}</p>
                                     </div>
-                                )) : <h6>No bids at the moment</h6>}
+                                </div>
+                            )) : <h6>No bids at the moment</h6>}
                         </div>
 
                         {bidsError && 

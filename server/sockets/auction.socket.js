@@ -1,15 +1,17 @@
 import { sql } from "drizzle-orm";
 import { db } from "../db/db.js";
+import { eq } from "drizzle-orm";
+import { bids, auctions } from "../db/schema.js";
 import jwt from 'jsonwebtoken'
 
 const auctionSocketSetup = (io) => {
     // auth middleware for socket 
     io.use(async (socket, next) => {
+        console.log('socket auth middleware running')
         const token = socket.handshake.auth.token;
         if (!token) return next(new Error("Access token not found"));
 
         try {
-            console.log(token);
             const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET); // sync form, throws directly
             socket.user = decoded;
             next();
@@ -21,7 +23,10 @@ const auctionSocketSetup = (io) => {
 
     io.on('connection', (socket) => {
 
+        console.log('socket connectedddd __________')
+
         socket.on('join-auction', (auctionId) => {
+            console.log('join auction event recieved on server')
             socket.join(`auction:${auctionId}`);
         })
 
@@ -30,6 +35,7 @@ const auctionSocketSetup = (io) => {
         })
 
         socket.on('place-bid', async (data) => {
+            console.log('place bid event recieved on server')
             await handlePlaceBid(io, socket, data);
         })
     })
@@ -92,16 +98,25 @@ const handlePlaceBid = async (io, socket, data) => {
             // transaction commits
         })
 
+        const normalizedResponse = {
+            bid: {
+                id: response.id,
+                amount: response.amount,
+                createdAt: response.created_at,
+            },
+            bidderId,
+            bidderName: socket.user.name,
+        }
+
+        console.log('logging response (socket)');
+        console.dir(normalizedResponse);
         // broadcast to all sockets in room (finally :) )
         io.in(`auction:${auctionId}`).emit('bid-placed', 
-            {
-                bid: response,
-                bidderId,
-                bidderName: socket.user.name,
-            }
+            normalizedResponse
         );
 
     } catch (e) {
+        console.log(e);
         socket.emit('place-bid-error', {
             message: e.message
         });
