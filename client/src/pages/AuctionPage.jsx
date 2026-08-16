@@ -3,6 +3,7 @@ import { useParams } from "react-router";
 import { io } from "socket.io-client";
 import axios from 'axios'
 import { formatDistanceToNow } from "date-fns";
+import { IoIosWarning } from "react-icons/io";
 
 export default function AuctionPage() {
     let { id } = useParams();
@@ -16,6 +17,9 @@ export default function AuctionPage() {
     const [bidValue, setBidValue] = useState('');
     const [bidError, setBidError] = useState('');
     const [bidSuccess, setBidSuccess] = useState('');
+
+    const [profile, setProfile] = useState({});
+    const [profileError, setProfileError] = useState(false);
     
     const [bids, setBids] = useState([]);
     const [highestBid, setHighestBid] = useState(null);
@@ -71,6 +75,25 @@ export default function AuctionPage() {
         }
     }
 
+    const getProfile = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            const response = await axios.get(`${import.meta.env.VITE_SERVER_URL}/api/v1/users/me`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                }
+            })
+            if (response.data.success) {
+                console.log(response.data.data)
+                setProfile(response.data.data)
+            }
+        } catch (e) {
+            setProfileError(true);
+            console.log("an error occured")
+            console.dir(e);
+        }
+    }
+
     const initializeSocket = () => {
         const token = localStorage.getItem('token');
         socketRef.current = io(`${import.meta.env.VITE_WS_SERVER_URL}`, {
@@ -110,7 +133,8 @@ export default function AuctionPage() {
         getAuction();
         getBids();
         initializeSocket();
-    }, [])
+        getProfile();
+    }, [id])
 
     function handlePlaceBid(e) {
         e.preventDefault();
@@ -126,11 +150,33 @@ export default function AuctionPage() {
             return;
         }
 
+        if (val < minimumBid) {
+            setBidError('Invalid bid amount');
+            return;
+        }
+
         socketRef.current.emit('place-bid', {auctionId: id, amount: Number(bidValue)})
 
-        setBidSuccess(`Bid placed: $${val} — (dummy action, no state change)`);
+        setBidSuccess(`Bid placed: $${val}`);
     }
 
+    const isHost = profile.id === auction.host_id;
+
+    if (isHost) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[#111827] text-white px-6">
+                <div className="max-w-2xl text-center">
+                    <div className="text-red-400 text-7xl flex items-center justify-center font-extrabold mb-4">
+                        <IoIosWarning />
+                    </div>
+                    <h1 className="text-4xl md:text-5xl font-bold mb-4">Cannot Bid on Your Own Auction</h1>
+                    <p className="text-slate-300 text-lg mb-8">
+                        You are the host of this auction. Hosts cannot place bids on their own items.
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-[#111827] px-6 py-10 text-slate-50">

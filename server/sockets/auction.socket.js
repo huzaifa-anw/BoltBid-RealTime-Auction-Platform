@@ -66,11 +66,11 @@ const handlePlaceBid = async (io, socket, data) => {
             const auction = result.rows[0];
 
             // Validate auction state
-            if(!auction) throw Error("auction does not exist")
+            if(!auction) throw Error("Auction does not exist")
 
-            if (auction.host_id === bidderId) throw Error("cannot bid on your own auction");
+            if (auction.host_id === bidderId) throw Error("Cannot bid on your own auction");
 
-            if (auction.status !== 'ACTIVE') throw Error("auction has ended");
+            if (auction.status !== 'ACTIVE') throw Error("Auction has ended");
 
             const hasExpired = new Date(auction.ends_at) <= new Date();
             if (hasExpired) throw Error("auction has ended")
@@ -116,7 +116,7 @@ const handlePlaceBid = async (io, socket, data) => {
         );
 
     } catch (e) {
-        console.log(e);
+        console.dir(e);
         socket.emit('place-bid-error', {
             message: e.message
         });

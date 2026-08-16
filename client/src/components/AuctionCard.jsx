@@ -1,7 +1,7 @@
 import { FaClock, FaGavel, FaUserCircle, FaEdit } from "react-icons/fa";
 import { formatDistanceToNow } from "date-fns";
 
-export default function AuctionCard({ id, title, staringPrice, endsAt, highestBid, description, imageURL, hostId, profileId, handleDelete, handleOpenUpdateModal, onClick }) {
+export default function AuctionCard({ id, title, startingPrice, endsAt, highestBid, description, imageURL, hostId, profileId, handleDelete, handleOpenUpdateModal, onClick }) {
 
     const isHost = hostId && profileId && hostId === profileId;
 
@@ -28,7 +28,7 @@ export default function AuctionCard({ id, title, staringPrice, endsAt, highestBi
                 <div className="mt-5 rounded-2xl bg-[#111827] p-4">
                     <p className="text-sm text-slate-400">Current bid</p>
                     <div className="mt-2 flex items-center justify-between">
-                        <span className="text-2xl font-semibold text-[#F9FAFB]">${highestBid || ' ___ '}</span>
+                        <span className="text-2xl font-semibold text-[#F9FAFB]">${highestBid || startingPrice || ' ___ '}</span>
                         <span className="text-sm text-slate-400">
                             {hasEnded
                                 ? "Ended"
