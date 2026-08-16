@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import Sidebar from "../components/Sidebar";
 import AuctionCard from "../components/AuctionCard";
 import axios from "axios"
+import { formatDistanceToNow } from "date-fns";
 
 export default function HomePage() {
 
@@ -244,6 +245,13 @@ export default function HomePage() {
         localStorage.removeItem("token");
         navigate("/");
     }
+
+    const timestamp = "2026-08-14T11:30:00.000Z";
+
+    const timeAgo = formatDistanceToNow(new Date(timestamp), {
+        addSuffix: true,
+    });
+
 
     return (
         <div className="min-h-screen bg-[#111827] text-[#F9FAFB]">

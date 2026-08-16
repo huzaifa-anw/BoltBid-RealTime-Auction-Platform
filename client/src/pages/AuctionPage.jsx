@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router";
 import { io } from "socket.io-client";
 import axios from 'axios'
+import { formatDistanceToNow } from "date-fns";
 
 export default function AuctionPage() {
     let { id } = useParams();
@@ -284,7 +285,9 @@ export default function AuctionPage() {
                                         <div>
                                             <p className="font-bold">{bid.bidderName}</p>
                                             <p className="text-sm text-slate-500">
-                                                {new Date(bid.createdAt).toLocaleTimeString()}
+                                                {formatDistanceToNow(new Date(bid.createdAt), {
+                                                    addSuffix: true,
+                                                })}
                                             </p>
                                         </div>
                                         <p className="text-xl text-cyan-400">${bid.amount}</p>
