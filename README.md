@@ -261,19 +261,6 @@ This project was an opportunity to explore several backend engineering concepts,
 
 ---
 
-## Screenshots
-
-Add screenshots here.
-
-```text
-Landing Page
-
-Dashboard
-
-Auction Details
-
-Live Bidding
-```
 
 ---
 
