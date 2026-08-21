@@ -51,22 +51,22 @@ export default function Landing() {
             />
 
             {/* Navbar */}
-            <nav className="relative z-20 px-8 py-6">
+            <nav className="relative z-20 px-4 py-4 sm:px-8 sm:py-6">
                 <div className="max-w-7xl mx-auto flex justify-between items-center">
 
                     <div className="flex items-center">
-                        <img src="./boltbid.webp" className="h-20" />
+                        <img src="./boltbid.webp" alt="BoltBid logo" className="h-12 w-auto max-w-full object-contain sm:h-20" />
                     </div>
 
-                    <div className="flex gap-3">
+                    <div className="flex shrink-0 gap-2 sm:gap-3">
                         <Link to="/login">
-                            <button className="border border-cyan-400 px-5 py-2 rounded-xl hover:bg-cyan-400 hover:text-black transition">
+                            <button className="rounded-xl border border-cyan-400 px-3 py-2 text-sm transition hover:bg-cyan-400 hover:text-black sm:px-5 sm:text-base">
                                 Login
                             </button>
                         </Link>
 
                         <Link to="/signup">
-                            <button className="bg-cyan-400 text-black font-semibold px-5 py-2 rounded-xl hover:scale-105 transition">
+                            <button className="rounded-xl bg-cyan-400 px-3 py-2 text-sm font-semibold text-black transition hover:scale-105 sm:px-5 sm:text-base">
                                 Sign Up
                             </button>
                         </Link>
@@ -75,9 +75,9 @@ export default function Landing() {
             </nav>
 
             {/* Hero */}
-            <section className="relative z-20 px-8 pt-20 pb-32">
+            <section className="relative z-20 px-4 pt-12 pb-20 sm:px-8 sm:pt-20 sm:pb-32">
 
-                <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
+                <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-2 lg:gap-16">
 
                     {/* Left */}
                     <motion.div
@@ -91,7 +91,7 @@ export default function Landing() {
                             Live Marketplace
                         </div>
 
-                        <h1 className="font-['Inter'] text-6xl lg:text-7xl font-bold leading-tight">
+                        <h1 className="font-['Inter'] text-4xl font-bold leading-tight sm:text-6xl lg:text-7xl">
 
                             Win the Bid.
                             <br />
@@ -133,7 +133,7 @@ export default function Landing() {
 
                         </div>
 
-                        <div className="flex gap-10 mt-14">
+                        <div className="mt-14 flex flex-wrap gap-x-6 gap-y-5 sm:gap-10">
 
                             <div>
                                 <h2 className="text-8xl mx-8 py-2 font-bold text-cyan-400">

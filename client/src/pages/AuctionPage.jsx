@@ -179,21 +179,21 @@ export default function AuctionPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#111827] px-6 py-10 text-slate-50">
-            <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[2fr_1fr]">
+        <div className="min-h-screen overflow-x-hidden bg-[#111827] px-3 py-6 text-slate-50 sm:px-6 sm:py-10">
+            <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
                 {/* Left column */}
 
-                <section className="overflow-hidden rounded-3xl border border-white/5 bg-slate-800">
+                <section className="min-w-0 overflow-hidden rounded-3xl border border-white/5 bg-slate-800">
                     <div className="relative">
                         <img
                             src={auction.image_url}
                             alt={auction.title}
-                            className="h-[550px] w-full object-cover"
+                            className="h-[300px] w-full object-cover sm:h-[420px] lg:h-[550px]"
                         />
 
                         {<div className="absolute inset-0 bg-gradient-to-t from-[#111827] via-transparent to-transparent" />}
                         {highestBid && 
-                            <div className="absolute bottom-8 left-8 rounded-2xl border border-cyan-400/30 bg-slate-950/80 px-6 py-4 backdrop-blur">
+                            <div className="absolute bottom-4 left-4 rounded-2xl border border-cyan-400/30 bg-slate-950/80 px-4 py-3 backdrop-blur sm:bottom-8 sm:left-8 sm:px-6 sm:py-4">
                                 <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
                                     Current Bid
                                 </p>
@@ -205,9 +205,9 @@ export default function AuctionPage() {
                         }
                     </div>
 
-                    <div className="space-y-8 p-8">
+                    <div className="space-y-8 p-4 sm:p-8">
                         <div>
-                            <h1 className="text-5xl tracking">
+                            <h1 className="break-words text-3xl sm:text-5xl">
                                 {auction.title}
                             </h1>
 
@@ -252,15 +252,15 @@ export default function AuctionPage() {
 
                 {/* Right column */}
 
-                <aside className="space-y-6">
+                <aside className="min-w-0 space-y-6">
                     {/* Bid panel */}
 
-                    <div className="sticky top-6 rounded-3xl border border-white/5 bg-slate-800 p-6">
+                    <div className="rounded-3xl border border-white/5 bg-slate-800 p-4 sm:p-6 lg:sticky lg:top-6">
                         <p className="text-xs uppercase tracking-[0.25em] text-slate-500">
                             Highest Bid
                         </p>
 
-                        <h2 className="mt-2 text-5xl text-cyan-400">
+                        <h2 className="mt-2 text-4xl text-cyan-400 sm:text-5xl">
                             ${highestBid ?? auction.starting_price}
                         </h2>
 
@@ -321,13 +321,13 @@ export default function AuctionPage() {
 
                     {/* Recent bids */}
 
-                    <div className="rounded-3xl border border-white/5 bg-slate-800 p-6">
+                    <div className="rounded-3xl border border-white/5 bg-slate-800 p-4 sm:p-6">
                         <h3 className="text-xl font-bold">Recent Bids</h3>
 
-                        <div className="mt-6 border-l border-cyan-400/20 pl-6">
+                        <div className="mt-6 border-l border-cyan-400/20 pl-4 sm:pl-6">
                             {bids.length > 0 ? bids.map((bid) => (
                                 <div key={bid.id} className="mb-8 last:mb-0">
-                                    <div className="flex items-center justify-between">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
                                         <div>
                                             <p className="font-bold">{bid.bidderName}</p>
                                             <p className="text-sm text-slate-500">

@@ -258,23 +258,23 @@ export default function HomePage() {
             <div className="flex flex-col lg:flex-row">
                 <Sidebar userName={profile.name || "Guest User"} profileError={profileError} activeView={activeView} setActiveView={setActiveView} handleLogout={handleLogout} />
 
-                <main className="flex-1 p-6 lg:p-8 min-w-0">
-                    <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
+                    <div className="mb-8 flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                             <p className="text-sm uppercase tracking-[0.25em] text-[#22D3EE]">Dashboard</p>
-                            <h1 className="mt-1 text-3xl font-semibold text-[#F9FAFB]">
+                            <h1 className="mt-1 text-2xl font-semibold text-[#F9FAFB] sm:text-3xl">
                                 {activeView === 'create' ? 'Create a new auction' : 'Browse ongoing auctions'}
                             </h1>
                         </div>
-                        <img src="/boltbid.webp" alt="BoltBid logo" className="h-16 w-auto" />
-                        <div className="rounded-2xl border border-[#22D3EE]/20 bg-[#1F2937] px-4 py-3 text-sm text-slate-300">
+                        <img src="/boltbid.webp" alt="BoltBid logo" className="h-auto max-h-16 w-auto max-w-full object-contain sm:mx-4" />
+                        <div className="w-fit max-w-full rounded-2xl border border-[#22D3EE]/20 bg-[#1F2937] px-4 py-3 text-sm text-slate-300">
                             <span className="font-medium text-[#22D3EE]">{auctions.length}</span> live listings available
                         </div>
                     </div>
 
                     <div className={`grid gap-5 ${activeView === 'create' ? 'justify-items-center' : 'lg:grid-cols-[1fr_420px]'}`}>
                         {activeView !== 'create' && (
-                            <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                            <section className="grid min-w-0 gap-5 md:grid-cols-2 xl:grid-cols-3">
                                 {auctionsError ?
                                     <p className="mt-2 text-lg text-red-400">{auctionsErrorMessage}</p>
                                     :
